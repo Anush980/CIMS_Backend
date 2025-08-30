@@ -42,7 +42,7 @@ You can check it out [here](https://github.com/Anush980/Customer_Inventory_Manag
 <!--![Dashboard](screenshots/dashboard.png)-->
 ---
 
-## 🚀 Installation (Frontend)
+## 🚀 Installation (Backend)
 
 1. **Clone the repository**
 ```bash
