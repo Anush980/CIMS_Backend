@@ -35,7 +35,7 @@ You can check it out [here](https://github.com/Anush980/Customer_Inventory_Manag
 
 ## 🌐 Live Demo
 
-[![Live Demo](https://img.shields.io/badge/CIMS%20Demo-Click-0D1117?style=for-the-badge&logo=github&logoColor=black)](https://cims-ebon.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/CIMS%20Demo-Click-0D1117?style=for-the-badge&logo=github&logoColor=black)](https://cims-ebon.vercel.app/dashboard)
 
 ---
 ## 📸 Screenshots (Future)
