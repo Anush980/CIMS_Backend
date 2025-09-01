@@ -38,9 +38,6 @@ You can check it out [here](https://github.com/Anush980/Customer_Inventory_Manag
 [![Live Demo](https://img.shields.io/badge/CIMS%20Demo-Click-0D1117?style=for-the-badge&logo=github&logoColor=black)](https://cims-ebon.vercel.app/dashboard)
 
 ---
-## 📸 Screenshots (Future)
-<!--![Dashboard](screenshots/dashboard.png)-->
----
 
 ## 🚀 Installation (Backend)
 
@@ -69,18 +66,18 @@ nodemon server.js
 |--------|----------------------------|---------------------------------|
 | POST   | /api/auth/register         | Register a new user             |
 | POST   | /api/auth/login            | Login and receive a JWT token   |
-<!-- | GET    | /api/customers             | Retrieve all customers          |
-| POST   | /api/customers             | Add a new customer              |
-| PUT    | /api/customers/:id         | Update an existing customer     |
-| DELETE | /api/customers/:id         | Delete a customer               |
-| GET    | /api/products              | Retrieve all products           |
-| POST   | /api/products              | Add a new product               |
-| PUT    | /api/products/:id          | Update an existing product      |
-| DELETE | /api/products/:id          | Delete a product                |
-| GET    | /api/orders                | Retrieve all orders             |
-| POST   | /api/orders                | Create a new order              |
-| PUT    | /api/orders/:id            | Update an existing order        |
-| DELETE | /api/orders/:id            | Delete an order                 | -->
+| GET    | /api/customer              | Retrieve all customers          |
+| POST   | /api/customer              | Add a new customer              |
+| PUT    | /api/customer/:id          | Update an existing customer     |
+| DELETE | /api/customer/:id          | Delete a customer               |
+| GET    | /api/inventory             | Retrieve all products           |
+| POST   | /api/inventory             | Add a new product               |
+| PUT    | /api/inventory/:id         | Update an existing product      |
+| DELETE | /api/inventory/:id         | Delete a product                |
+| GET    | /api/sales                 | Retrieve all sales              |
+| POST   | /api/sales                 | Create a new sales              |
+| PUT    | /api/sales/:id             | Update an existing sales        |
+| DELETE | /api/sales/:id             | Delete Sales                    |
 ---
 Built by [Anush980](https://github.com/Anush980) – Feel free to ⭐ the repo or contribute!
 

@@ -9,8 +9,16 @@ const port = process.env.PORT||8000;
 
 app.use(express.json());
 app.use(cors());
-const authRoutes = require("./routes/authRoutes");
-app.use("/api/auth", authRoutes)
+
+const authRoutes = require('./routes/authRoutes')
+const inventoryRoutes = require('./routes/inventoryRoutes');
+const customerRoutes = require("./routes/customerRoutes");
+const salesRoutes = require("./routes/salesRoutes");
+
+app.use('/api',authRoutes);
+app.use('/api',inventoryRoutes);
+app.use('/api',customerRoutes);
+app.use('/api',salesRoutes);
 
 mongoose.connect(
 process.env.MONGODB_URI)
