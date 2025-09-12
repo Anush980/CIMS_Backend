@@ -18,6 +18,10 @@ const itemSchema =new mongoose.Schema({
     stock:{
     type:Number,
     default:1
+    },
+    restock:{
+    type:Number,
+    default:5
     }
 });
 module.exports=mongoose.model("Item",itemSchema);
