@@ -13,7 +13,7 @@ const addItem = async (req, res) => {
 //get All Items
 const  getItems = async (req, res) => {
   try {
-    const item = await Item.find();
+    const item = await Item.find().sort({_id:-1});
     res.status(200).json(item);
   } catch (err) {
     res.status(400).json({ Error: err.message });
