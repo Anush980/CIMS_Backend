@@ -8,7 +8,7 @@ router.get("/customer", getCustomers);
 // Add a new customer
 router.post("/customer", addCustomer);
 
-//search Customer by all
+//search Customer 
 router.get("/customer/search",searchCustomer);
 
 

@@ -23,6 +23,7 @@ catch(err){
 }
 }
 
+//searchCustomer
 const searchCustomer = async (req,res)=>{
   try{
     const {q} = req.query;
@@ -34,16 +35,16 @@ const searchCustomer = async (req,res)=>{
     const results = await Customer.find({
       $or:[
         {
-          customerName:{$regex:`^${q}`,$options:"i"}
+          customerName:{$regex:q,$options:"i"}
         },
         {
-          customerEmail:{$regex:`^${q}`,$options:"i"}
+          customerEmail:{$regex:q,$options:"i"}
         },
         {
           customerPhone:Number(q)
         },
         {
-          customerAddress:{$regex:`^${q}`,$options:"i"}
+          customerAddress:{$regex:q,$options:"i"}
         },
       ]
     });

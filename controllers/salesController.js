@@ -23,6 +23,28 @@ const getSales = async (req,res)=>{
   }
 }
 
+//search Item
+const searchSales =async(req,res)=>{
+  try{
+    const {q}=req.query;
+    if(!q){
+      return res.json([]);
+    }
+    const results = await Sales.find({
+      $or:[
+        {
+          customer:{$regex:q,$options:"i"}
+        },
+      ]
+    });
+    res.status(200).json(results);
+  }
+  catch(err){
+    console.error("Error:",err);
+    res.status(500).json({error:"server Error"});
+  }
+}
+
 //getSalesbyID
 const getSalesbyID = async (req,res)=>{
     try{
@@ -62,4 +84,4 @@ const deleteSales = async (req,res) => {
   }
 }
 
-module.exports = {addSales,getSales,getSalesbyID,updateSales,deleteSales}
+module.exports = {addSales,getSales,searchSales,getSalesbyID,updateSales,deleteSales}

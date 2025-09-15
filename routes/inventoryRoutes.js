@@ -1,9 +1,12 @@
 const express = require("express");
-const { getItems, getItemByID, addItem, updateItem, deleteItem } = require("../controllers/inventoryController");
+const { getItems, getItemByID, addItem, updateItem, deleteItem, searchItem } = require("../controllers/inventoryController");
 const router = express.Router();
 
 // Get all Items
 router.get("/inventory", getItems);
+
+//search Customer 
+router.get("/inventory/search",searchItem);
 
 // Get Item by ID
 router.get("/inventory/:id", getItemByID);

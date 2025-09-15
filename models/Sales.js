@@ -42,5 +42,8 @@ const salesSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+salesSchema.index({
+  customer:"text",
+})
 
 module.exports = mongoose.model("Sales", salesSchema);

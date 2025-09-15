@@ -24,4 +24,11 @@ const itemSchema =new mongoose.Schema({
     default:5
     }
 });
+
+itemSchema.index({
+    itemName:"text",
+    category:"text",
+    sku:"text"
+}
+)
 module.exports=mongoose.model("Item",itemSchema);

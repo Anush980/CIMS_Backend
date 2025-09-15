@@ -20,6 +20,34 @@ const  getItems = async (req, res) => {
   }
 };
 
+//search Item
+const searchItem =async(req,res)=>{
+  try{
+    const {q}=req.query;
+    if(!q){
+      return res.json([]);
+    }
+    const results = await Item.find({
+      $or:[
+        {
+          itemName:{$regex:q,$options:"i"}
+        },
+        {
+          category:{$regex:q,$options:"i"}
+        },
+        {
+          sku:{$regex:q,$options:"i"}
+        }
+      ]
+    });
+    res.status(200).json(results);
+  }
+  catch(err){
+    console.error("Error:",err);
+    res.status(500).json({error:"server Error"});
+  }
+}
+
 //get Specific Item
 const getItemByID = async (req, res) => {
   try {
@@ -59,4 +87,4 @@ const deleteItem = async (req,res)=>{
     }
 }
 
-module.exports = {addItem,getItems,getItemByID,updateItem,deleteItem};
+module.exports = {addItem,getItems,searchItem,getItemByID,updateItem,deleteItem};

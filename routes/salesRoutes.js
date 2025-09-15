@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getSales,getSalesbyID,addSales, updateSales, deleteSales } = require("../controllers/salesController");
+const { getSales,getSalesbyID,addSales, updateSales, deleteSales, searchSales } = require("../controllers/salesController");
 
 // Get all Sales
 router.get("/sales", getSales);
+
+//search Customer 
+router.get("/sales/search",searchSales);
 
 // Get Sales by ID
 router.get("/sales/:id", getSalesbyID);
