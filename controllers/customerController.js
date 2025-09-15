@@ -56,6 +56,8 @@ const searchCustomer = async (req,res)=>{
   }
 }
 
+
+
 //getCustomerById
 const getCustomerById = async (req,res)=>{
     try{

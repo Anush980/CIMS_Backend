@@ -47,7 +47,30 @@ const searchItem =async(req,res)=>{
     res.status(500).json({error:"server Error"});
   }
 }
+//filter by category 
+ const filterItemByCategory= async (req,res)=>{
+  try{
+const {category}=req.query;
+if(!category){
+  return res.json({message:"NO category specified!"})
+}
+const results = await Item.find({
+   category: { $regex: `^${category}$`, $options: "i" }
+});
 
+
+if(results.length===0){
+  return res.status(404).json({
+    message:"No item found"
+  })
+}
+res.status(200).json(results);
+  }
+  catch(err){
+    console.error("Error:",err);
+    res.status(500).json({message:"Server error "})
+  }
+ }
 //get Specific Item
 const getItemByID = async (req, res) => {
   try {
@@ -87,4 +110,4 @@ const deleteItem = async (req,res)=>{
     }
 }
 
-module.exports = {addItem,getItems,searchItem,getItemByID,updateItem,deleteItem};
+module.exports = {addItem,getItems,searchItem,filterItemByCategory,getItemByID,updateItem,deleteItem};
