@@ -84,6 +84,18 @@ nodemon server.js
 | GET    | /api/sales/search     | Search sales by customer or product name   |
 
 ---
+
+## Query Endpoints
+
+| Method | Endpoint              | Query Parameter      | Description                                   |
+| ------ | --------------------- | -------------------- | --------------------------------------------- |
+| GET    | /api/inventory/search | q=phone              | Search inventory by name, SKU, or category    |
+| GET    | /api/inventory/filter | category=Electronics | Filter inventory by category                  |
+| GET    | /api/customer/search  | q=John               | Search customers by name or other fields      |
+|  -     |         -             |          -           |                    -                          | 
+|  -     |         -             |          -           |                    -                          |
+
+---
 Built by [Anush980](https://github.com/Anush980) – Feel free to ⭐ the repo or contribute!
 
 
