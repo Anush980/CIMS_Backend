@@ -22,6 +22,11 @@ const itemSchema =new mongoose.Schema({
     restock:{
     type:Number,
     default:5
+    },
+
+    image:{
+type:String,
+default:"/default.jpg"
     }
 });
 
