@@ -1,102 +1,97 @@
-const Customer = require('../models/Customer');
+const Customer = require("../models/Customer");
 
-//add Customer 
-
-const addCustomer = async (req,res)=>{
-    try{
-  const customer = await Customer.create(req.body);
+// Add Customer
+const addCustomer = async (req, res) => {
+  try {
+    const customer = await Customer.create(req.body);
     res.status(200).json(customer);
-    }
-  catch(err){
-    res.status(400).json({error:err.message});
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-//getCustomers 
-const getCustomers = async (req,res)=>{
-try{
-    const customer = await Customer.find().sort({_id:1});
-    res.status(200).json(customer);
-}
-catch(err){
-    res.status(400).json({error:err.message})
-}
-}
+// Get Customers (with search + sort + optional category)
+const getCustomers = async (req, res) => {
+  try {
+    const { search, sort } = req.query;
+    let query = {};
 
-//searchCustomer
-const searchCustomer = async (req,res)=>{
-  try{
-    const {q} = req.query;
-    if(!q){
-      return res.json([]);
+    // Search filter
+    if (search) {
+      const orConditions = [
+        { customerName: { $regex: search, $options: "i" } },
+        { customerEmail: { $regex: search, $options: "i" } },
+        { customerAddress: { $regex: search, $options: "i" } },
+      ];
+
+      // If search looks like a number, include phone
+      if (!isNaN(Number(search))) {
+        orConditions.push({ customerPhone: Number(search) });
+      }
+
+      query.$or = orConditions;
     }
-// const results = await Customer.find({ $text: { $search: q } });
 
-    const results = await Customer.find({
-      $or:[
-        {
-          customerName:{$regex:q,$options:"i"}
-        },
-        {
-          customerEmail:{$regex:q,$options:"i"}
-        },
-        {
-          customerPhone:Number(q)
-        },
-        {
-          customerAddress:{$regex:q,$options:"i"}
-        },
-      ]
+    let customersQuery = Customer.find(query);
+
+    // Sorting
+    if (sort === "recent") {
+      customersQuery = customersQuery.sort({ createdAt: -1 });
+    } else if (sort === "oldest") {
+      customersQuery = customersQuery.sort({ createdAt: 1 });
+    } else {
+      customersQuery = customersQuery.sort({ _id: -1 });
+    }
+
+    const customers = await customersQuery;
+    res.status(200).json(customers);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Get Customer by ID
+const getCustomerById = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const customer = await Customer.findById(id);
+    if (!customer) return res.status(404).json({ error: "Not Found" });
+    res.status(200).json(customer);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+// Update Customer
+const updateCustomer = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const customer = await Customer.findByIdAndUpdate(id, req.body, {
+      new: true,
     });
-    res.status(200).json(results);
+    if (!customer) return res.status(404).json({ error: "Not Found" });
+    res.status(200).json(customer);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-  catch(err){
-    console.error("Error:",err);
-    res.status(500).json({error:"server error"});
+};
+
+// Delete Customer
+const deleteCustomer = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const customer = await Customer.findByIdAndDelete(id);
+    if (!customer) return res.status(404).json({ error: "Not Found" });
+    res.status(200).json(customer);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-}
+};
 
-
-
-//getCustomerById
-const getCustomerById = async (req,res)=>{
-    try{
-        const id = req.params.id;
-        const customer = await Customer.findById(id);
-        if(!customer) return res.status(400).json({error:"Not Found"});
-        res.status(200).json(customer);
-
-    }
-     catch(err){
-    res.status(400).json({error:err.message});
-  }
-}
-
-//updateCustomer
-const updateCustomer = async (req,res) => {
-    try{
-        const id = req.params.id;
-        const customer = await Customer.findByIdAndUpdate(id,req.body,{new:true});
-        if(!customer) return res.status(400).json({error:"Not Found"});
-        res.status(200).json(customer);
-    }
-    catch(err){
-        res.status(400).json({error:err.message});
-    }
-}
-//deleteCustomer
-const deleteCustomer =async (req,res) => {
-    try{
-        const id = req.params.id;
-        const customer = await Customer.findByIdAndDelete(id);
-        if(!customer) return res.status(400).json({error:"Not Found"});
-        res.status(200).json(customer);
-    }
-      catch(err){
-        res.status(400).json({error:err.message});
-    }
-}
-
-
-
-module.exports={addCustomer,getCustomers,getCustomerById,updateCustomer,deleteCustomer,searchCustomer};
+module.exports = {
+  addCustomer,
+  getCustomers,
+  getCustomerById,
+  updateCustomer,
+  deleteCustomer,
+};

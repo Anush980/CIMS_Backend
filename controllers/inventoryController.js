@@ -40,14 +40,45 @@ const addItem = async (req, res) => {
 
 
 //get All Items
-const  getItems = async (req, res) => {
-  try {
-    const item = await Item.find().sort({_id:-1});
-    res.status(200).json(item);
-  } catch (err) {
-    res.status(400).json({ Error: err.message });
+// const  getItems = async (req, res) => {
+//   try {
+//     const item = await Item.find().sort({_id:-1});
+//     res.status(200).json(item);
+//   } catch (err) {
+//     res.status(400).json({ Error: err.message });
+//   }
+// };
+const getItems = async (req,res)=>{
+  try{
+    const {search,sort,category}= req.query;
+    let query ={};
+
+    //search filter
+    if(search){
+      const orConditions=[
+        {itemName:{$regex:search,$options:"i"}},
+        {sku:{$regex:search,$options:"i"}},
+      ];
+      query.$or = orConditions;
+    }
+      let inventoryQuery=Item.find(query);
+      //sorting
+      if(sort == "recent"){
+        inventoryQuery = inventoryQuery.sort({_id:-1})
+      }
+      else if(sort == "olderst"){
+         inventoryQuery = inventoryQuery.sort({_id:1})
+      }
+      else{
+         inventoryQuery = inventoryQuery.sort({_id:-1})
+      }
+      const items= await inventoryQuery;
+      res.status(200).json(items);
+    }
+  catch(err){
+    console.error("Error:",err);
   }
-};
+}
 
 //search Item
 const searchItem =async(req,res)=>{
@@ -162,4 +193,4 @@ const deleteItem = async (req,res)=>{
     }
 }
 
-module.exports = {addItem,getItems,searchItem,filterItemByCategory,getItemByID,updateItem,deleteItem};
+module.exports = {addItem,getItems,filterItemByCategory,getItemByID,updateItem,deleteItem};
