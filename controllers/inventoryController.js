@@ -37,17 +37,6 @@ const addItem = async (req, res) => {
   }
 };
 
-
-
-//get All Items
-// const  getItems = async (req, res) => {
-//   try {
-//     const item = await Item.find().sort({_id:-1});
-//     res.status(200).json(item);
-//   } catch (err) {
-//     res.status(400).json({ Error: err.message });
-//   }
-// };
 const getItems = async (req,res)=>{
   try{
     const {search,sort,category}= req.query;
@@ -80,33 +69,33 @@ const getItems = async (req,res)=>{
   }
 }
 
-//search Item
-const searchItem =async(req,res)=>{
-  try{
-    const {q}=req.query;
-    if(!q){
-      return res.json([]);
-    }
-    const results = await Item.find({
-      $or:[
-        {
-          itemName:{$regex:q,$options:"i"}
-        },
-        {
-          category:{$regex:q,$options:"i"}
-        },
-        {
-          sku:{$regex:q,$options:"i"}
-        }
-      ]
-    });
-    res.status(200).json(results);
-  }
-  catch(err){
-    console.error("Error:",err);
-    res.status(500).json({error:"server Error"});
-  }
-}
+// //search Item
+// const searchItem =async(req,res)=>{
+//   try{
+//     const {q}=req.query;
+//     if(!q){
+//       return res.json([]);
+//     }
+//     const results = await Item.find({
+//       $or:[
+//         {
+//           itemName:{$regex:q,$options:"i"}
+//         },
+//         {
+//           category:{$regex:q,$options:"i"}
+//         },
+//         {
+//           sku:{$regex:q,$options:"i"}
+//         }
+//       ]
+//     });
+//     res.status(200).json(results);
+//   }
+//   catch(err){
+//     console.error("Error:",err);
+//     res.status(500).json({error:"server Error"});
+//   }
+// }
 //filter by category 
  const filterItemByCategory= async (req,res)=>{
   try{
