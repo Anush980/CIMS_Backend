@@ -10,12 +10,6 @@ const upload = multer  ({storage});
 // Get all Items
 router.get("/inventory", getItems);
 
-//search Customer 
-router.get("/inventory/search",searchItem);
-
-//filter by category
-router.get("/inventory/filter",filterItemByCategory)
-
 // Get Item by ID
 router.get("/inventory/:id", getItemByID);
 

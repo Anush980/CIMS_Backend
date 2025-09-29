@@ -8,9 +8,6 @@ router.get("/customer", getCustomers);
 // Add a new customer
 router.post("/customer", addCustomer);
 
-//search Customer 
-router.get("/customer/search",searchCustomer);
-
 
 // Get customer by ID
 router.get("/customer/:id", getCustomerById);

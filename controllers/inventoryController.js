@@ -1,6 +1,6 @@
 const Item = require("../models/Item");
 const cloudinary = require("../config/cloudinary");
-const { memoryStorage } = require("multer");
+// const { memoryStorage } = require("multer");
 
 const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1758189840/inventory/rgwniiqhjknsuuapvjpx.jpg`;
 
@@ -43,84 +43,39 @@ const getItems = async (req,res)=>{
     let query ={};
 
     //search filter
-    if(search){
+    if (search) {
       const orConditions=[
         {itemName:{$regex:search,$options:"i"}},
         {sku:{$regex:search,$options:"i"}},
       ];
       query.$or = orConditions;
     }
+ //category
+     if(category){
+        query.category= category;
+      } 
       let inventoryQuery=Item.find(query);
+     
       //sorting
       if(sort == "recent"){
         inventoryQuery = inventoryQuery.sort({_id:-1})
       }
-      else if(sort == "olderst"){
+      else if(sort == "oldest"){
          inventoryQuery = inventoryQuery.sort({_id:1})
       }
       else{
          inventoryQuery = inventoryQuery.sort({_id:-1})
       }
-      const items= await inventoryQuery;
+      const items= await inventoryQuery.exec();
       res.status(200).json(items);
     }
   catch(err){
     console.error("Error:",err);
+    res.status(500).json({error:"Internal Server Error"})
   }
 }
 
-// //search Item
-// const searchItem =async(req,res)=>{
-//   try{
-//     const {q}=req.query;
-//     if(!q){
-//       return res.json([]);
-//     }
-//     const results = await Item.find({
-//       $or:[
-//         {
-//           itemName:{$regex:q,$options:"i"}
-//         },
-//         {
-//           category:{$regex:q,$options:"i"}
-//         },
-//         {
-//           sku:{$regex:q,$options:"i"}
-//         }
-//       ]
-//     });
-//     res.status(200).json(results);
-//   }
-//   catch(err){
-//     console.error("Error:",err);
-//     res.status(500).json({error:"server Error"});
-//   }
-// }
-//filter by category 
- const filterItemByCategory= async (req,res)=>{
-  try{
-const {category}=req.query;
-if(!category){
-  return res.json({message:"NO category specified!"})
-}
-const results = await Item.find({
-   category: { $regex: `^${category}$`, $options: "i" }
-});
-
-
-if(results.length===0){
-  return res.status(404).json({
-    message:"No item found"
-  })
-}
-res.status(200).json(results);
-  }
-  catch(err){
-    console.error("Error:",err);
-    res.status(500).json({message:"Server error "})
-  }
- }
-//get Specific Item
+//get Item by ID
 const getItemByID = async (req, res) => {
   try {
     const id = req.params.id;
@@ -182,4 +137,4 @@ const deleteItem = async (req,res)=>{
     }
 }
 
-module.exports = {addItem,getItems,filterItemByCategory,getItemByID,updateItem,deleteItem};
+module.exports = {addItem,getItems,getItemByID,updateItem,deleteItem};
