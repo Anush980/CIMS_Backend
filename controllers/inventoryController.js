@@ -71,7 +71,7 @@ const getItems = async (req,res)=>{
     }
   catch(err){
     console.error("Error:",err);
-    res.status(500).json({error:"Internal Server Error"})
+    res.status(500).json({Error:"Internal Server Error"})
   }
 }
 
@@ -81,7 +81,7 @@ const getItemByID = async (req, res) => {
     const id = req.params.id;
     const item = await Item.findById(id);
     if (!item) {
-      return res.status(404).json({ error: "Item not Found" });
+      return res.status(404).json({ Error: "Item not Found" });
     }
     res.status(200).json(item);
   } catch (err) {
@@ -133,7 +133,7 @@ const deleteItem = async (req,res)=>{
           res.status(200).json(item);
     }
     catch(err){
-        res.status(400).json({error:err.message});
+        res.status(400).json({Error:err.message});
     }
 }
 

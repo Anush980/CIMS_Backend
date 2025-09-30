@@ -8,10 +8,8 @@ router.get("/customer", getCustomers);
 // Add a new customer
 router.post("/customer", addCustomer);
 
-
 // Get customer by ID
 router.get("/customer/:id", getCustomerById);
-
 
 // Update customer by ID
 router.put("/customer/:id", updateCustomer);
