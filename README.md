@@ -62,40 +62,30 @@ nodemon server.js
 ---
 ## 📸 API Endpoints (Up to now)
 
-| Method | Endpoint              | Description                                |
-| ------ | --------------------- | ------------------------------------------ |
-| POST   | /api/auth/register    | Register a new user                        |
-| POST   | /api/auth/login       | Login and receive a JWT token              |
-| GET    | /api/customer         | Retrieve all customers                     |
-| POST   | /api/customer         | Add a new customer                         |
-| PUT    | /api/customer/:id     | Update an existing customer                |
-| DELETE | /api/customer/:id     | Delete a customer                          |
-| GET    | /api/customer/search  | Search customers by name or other fields   |
-| GET    | /api/inventory        | Retrieve all products                      |
-| POST   | /api/inventory        | Add a new product                          |
-| PUT    | /api/inventory/:id    | Update an existing product                 |
-| DELETE | /api/inventory/ :id   | Delete a product                           |
-| GET    | /api/inventory/search | Search inventory by name, SKU, or category |
-| GET    | /api/inventory/filter | Filter inventory by category               |
-| GET    | /api/sales            | Retrieve all sales                         |
-| POST   | /api/sales            | Create a new sale                          |
-| PUT    | /api/sales/:id        | Update an existing sale                    |
-| DELETE | /api/sales/:id        | Delete a sale                              |
-| GET    | /api/sales/search     | Search sales by customer or product name   |
+| Method | Endpoint                | Description                                |
+| ------ | ---------------------   | ------------------------------------------ |
+| POST   | /api/auth/register      | Register a new user                        |
+| POST   | /api/auth/login         | Login and receive a JWT token              |
+| GET    | /api/customer           | Retrieve all customers                     |
+| POST   | /api/customer           | Add a new customer                         |
+| PUT    | /api/customer/:id       | Update an existing customer                |
+| DELETE | /api/customer/:id       | Delete a customer                          |
+| GET    | /api/customer?search    | Search customers by name or other fields   |
+| GET    | /api/inventory          | Retrieve all products                      |
+| POST   | /api/inventory          | Add a new product                          |
+| PUT    | /api/inventory/:id      | Update an existing product                 |
+| DELETE | /api/inventory/ :id     | Delete a product                           |
+| GET    | /api/inventory?search   | Search inventory by name, SKU, or category |
+| GET    | /api/inventory?category | Filter inventory by category               |
+| GET    | /api/sales              | Retrieve all sales                         |
+| POST   | /api/sales              | Create a new sale                          |
+| PUT    | /api/sales/:id          | Update an existing sale                    |
+| DELETE | /api/sales/:id          | Delete a sale                              |
+| GET    | /api/sales?search       | Search sales by customer or product name   |
 
 ---
 
-## Query Endpoints
 
-| Method | Endpoint              | Query Parameter      | Description                                   |
-| ------ | --------------------- | -------------------- | --------------------------------------------- |
-| GET    | /api/inventory/search | q=phone              | Search inventory by name, SKU, or category    |
-| GET    | /api/inventory/filter | category=Electronics | Filter inventory by category                  |
-| GET    | /api/customer/search  | q=John               | Search customers by name or other fields      |
-|  -     |         -             |          -           |                    -                          | 
-|  -     |         -             |          -           |                    -                          |
-
----
 Built by [Anush980](https://github.com/Anush980) – Feel free to ⭐ the repo or contribute!
 
 
