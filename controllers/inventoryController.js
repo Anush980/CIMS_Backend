@@ -57,7 +57,7 @@ const getItems = async (req,res)=>{
       let inventoryQuery=Item.find(query);
      
       //sorting
-      if(sort == "recent"){
+      if(!sort ||sort == "latest"){
         inventoryQuery = inventoryQuery.sort({_id:-1})
       }
       else if(sort == "oldest"){
