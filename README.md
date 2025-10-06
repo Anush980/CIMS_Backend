@@ -38,6 +38,10 @@ You can check it out [here](https://github.com/Anush980/Customer_Inventory_Manag
 [![Live Demo](https://img.shields.io/badge/CIMS%20Demo-Click-0D1117?style=for-the-badge&logo=github&logoColor=black)](https://cims-ebon.vercel.app/dashboard)
 
 ---
+## 📄 License
+
+This project is open-source under the [MIT License](./LICENSE).  
+You can use, change, or share it — just give proper credit.
 
 ## 🚀 Installation (Backend)
 
