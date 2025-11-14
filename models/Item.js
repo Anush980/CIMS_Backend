@@ -27,8 +27,14 @@ const itemSchema =new mongoose.Schema({
     image:{
 type:String,
 default:"/default.jpg"
-    }
-});
+    },
+    
+}
+,
+ {
+    timestamps: true,
+  }
+);
 
 itemSchema.index({
     itemName:"text",

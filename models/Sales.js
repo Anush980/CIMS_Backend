@@ -40,7 +40,9 @@ const salesSchema = new mongoose.Schema(
       default: "cash",
     },
   },
-  { timestamps: true }
+  { 
+    timestamps: true
+   }
 );
 salesSchema.index({
   customer:"text",

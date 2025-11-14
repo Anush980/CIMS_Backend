@@ -3,12 +3,12 @@ const mongoose = require('mongoose');
 const customerSchema = new mongoose.Schema({
     customerName:{
         type:String,
-        require:true,
+        required:true,
         trim:true
     },
     customerPhone:{
         type:Number,
-        require:true,
+        required:true,
         trim:true
     },
     customerEmail:{
@@ -17,7 +17,7 @@ const customerSchema = new mongoose.Schema({
     },
     customerAddress:{
         type:String,
-        require:true,
+        required:true,
         trim:true
     },
     creditBalance:{
@@ -25,9 +25,12 @@ const customerSchema = new mongoose.Schema({
         default:0,
         trim:true
     }
-    
 
-});
+},
+ {
+    timestamps: true,
+  }
+);
 
 customerSchema.index({
     customerName:"text",
