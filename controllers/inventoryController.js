@@ -8,10 +8,9 @@ const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_C
 const addItem = async (req, res) => {
   try {
     const streamifier = require("streamifier");
-    let imageUrl = DEFAULT_IMAGE_URL; // default fallback
+    let imageUrl = DEFAULT_IMAGE_URL;
 
     if (req.file) {
-      // Upload image to Cloudinary
       imageUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "inventory" },
@@ -25,8 +24,8 @@ const addItem = async (req, res) => {
       });
     }
 
-    // Always create the item, with uploaded image or default
     const item = await Item.create({
+      userId: req.user.id, // PRIVATE OWNERSHIP
       ...req.body,
       image: imageUrl,
     });
@@ -37,57 +36,61 @@ const addItem = async (req, res) => {
   }
 };
 
-const getItems = async (req,res)=>{
-  try{
-    const {search,sort,category}= req.query;
-    let query ={};
+const getItems = async (req, res) => {
+  try {
+    const { search, sort, category } = req.query;
+    let query = { userId: req.user.id };
 
     //search filter
     if (search) {
-      const orConditions=[
-        {itemName:{$regex:search,$options:"i"}},
-        {sku:{$regex:search,$options:"i"}},
+      const orConditions = [
+        { itemName: { $regex: search, $options: "i" } },
+        { sku: { $regex: search, $options: "i" } },
       ];
       query.$or = orConditions;
     }
- //category
-     if(category){
-        query.category= category;
-      } 
-      let inventoryQuery=Item.find(query);
-     
-      //sorting
-      if(!sort ||sort == "latest"){
-        inventoryQuery = inventoryQuery.sort({_id:-1})
-      }
-      else if(sort == "oldest"){
-         inventoryQuery = inventoryQuery.sort({_id:1})
-      }
-      else{
-         inventoryQuery = inventoryQuery.sort({_id:-1})
-      }
-      const items= await inventoryQuery.exec();
-      res.status(200).json(items);
+    //category
+    if (category) {
+      query.category = category;
     }
-  catch(err){
-    console.error("Error:",err);
-    res.status(500).json({Error:"Internal Server Error"})
+    let inventoryQuery = Item.find(query);
+
+    //sorting
+    if (!sort || sort == "latest") {
+      inventoryQuery = inventoryQuery.sort({ _id: -1 });
+    } else if (sort == "oldest") {
+      inventoryQuery = inventoryQuery.sort({ _id: 1 });
+    } else {
+      inventoryQuery = inventoryQuery.sort({ _id: -1 });
+    }
+    const items = await inventoryQuery.exec();
+    res.status(200).json(items);
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ Error: "Internal Server Error" });
   }
-}
+};
 
 //get Item by ID
 const getItemByID = async (req, res) => {
   try {
     const id = req.params.id;
-    const item = await Item.findById(id);
+
+    const item = await Item.findOne({
+      _id: id,
+      userId: req.user.id, 
+    });
+
     if (!item) {
       return res.status(404).json({ Error: "Item not Found" });
     }
+
     res.status(200).json(item);
   } catch (err) {
     res.status(400).json({ Error: err.message });
   }
 };
+
 
 //update Item
 const updateItem = async (req, res) => {
@@ -114,7 +117,11 @@ const updateItem = async (req, res) => {
     }
 
     // Update the item with new data
-    const item = await Item.findByIdAndUpdate(id, updateData, { new: true });
+    const item = await Item.findOneAndUpdate(
+      { _id: id, userId: req.user.id },
+      updateData,
+      { new: true }
+    );
 
     if (!item) return res.status(400).json({ error: "Item not found" });
     res.status(200).json(item);
@@ -123,18 +130,20 @@ const updateItem = async (req, res) => {
   }
 };
 
-
 //delete Item
-const deleteItem = async (req,res)=>{
-    try{
-        const id = req.params.id;
-        const item= await Item.findByIdAndDelete(id);
-          if (!item) return res.status(400).json({ error: "Item not found" });
-          res.status(200).json(item);
-    }
-    catch(err){
-        res.status(400).json({Error:err.message});
-    }
-}
+const deleteItem = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const item = await Item.findOneAndDelete({
+      _id: id,
+      userId: req.user.id,
+    });
 
-module.exports = {addItem,getItems,getItemByID,updateItem,deleteItem};
+    if (!item) return res.status(400).json({ error: "Item not found" });
+    res.status(200).json(item);
+  } catch (err) {
+    res.status(400).json({ Error: err.message });
+  }
+};
+
+module.exports = { addItem, getItems, getItemByID, updateItem, deleteItem };

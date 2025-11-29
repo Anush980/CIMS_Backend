@@ -3,7 +3,11 @@ const Customer = require("../models/Customer");
 // Add Customer
 const addCustomer = async (req, res) => {
   try {
-    const customer = await Customer.create(req.body);
+    const customer = await Customer.create({
+      userId: req.user.id,   
+      ...req.body,
+    });
+
     res.status(200).json(customer);
   } catch (err) {
     res.status(400).json({ Error: err.message });
@@ -14,7 +18,7 @@ const addCustomer = async (req, res) => {
 const getCustomers = async (req, res) => {
   try {
     const { search, sort } = req.query;
-    let query = {};
+    let query = { userId: req.user.id };
 
     // Search filter
     if (search) {
@@ -54,7 +58,10 @@ const getCustomers = async (req, res) => {
 const getCustomerById = async (req, res) => {
   try {
     const id = req.params.id;
-    const customer = await Customer.findById(id);
+     const customer = await Customer.findOne({
+      _id: id,
+      userId: req.user.id,  
+    });
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
   } catch (err) {
@@ -66,9 +73,11 @@ const getCustomerById = async (req, res) => {
 const updateCustomer = async (req, res) => {
   try {
     const id = req.params.id;
-    const customer = await Customer.findByIdAndUpdate(id, req.body, {
-      new: true,
-    });
+    const customer = await Customer.findOneAndUpdate(
+      { _id: id, userId: req.user.id },  
+      req.body,
+      { new: true }
+    );
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
   } catch (err) {
@@ -80,7 +89,10 @@ const updateCustomer = async (req, res) => {
 const deleteCustomer = async (req, res) => {
   try {
     const id = req.params.id;
-    const customer = await Customer.findByIdAndDelete(id);
+    const customer = await Customer.findOneAndDelete({
+      _id: id,
+      userId: req.user.id,   
+    });
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
   } catch (err) {

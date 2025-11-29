@@ -1,45 +1,48 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const itemSchema =new mongoose.Schema({
-    itemName:{
-        type:String,
-        require:true
+const itemSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    category:{
-        type:String
+    itemName: {
+      type: String,
+      required: true,
     },
-    price:{
-        type:Number,
-        require:true,
+    category: {
+      type: String,
     },
-    sku:{
-        type:String
+    price: {
+      type: Number,
+      required: true,
     },
-    stock:{
-    type:Number,
-    default:1
+    sku: {
+      type: String,
     },
-    restock:{
-    type:Number,
-    default:5
+    stock: {
+      type: Number,
+      default: 1,
+    },
+    restock: {
+      type: Number,
+      default: 5,
     },
 
-    image:{
-type:String,
-default:"/default.jpg"
+    image: {
+      type: String,
+      default: "/default.jpg",
     },
-    
-}
-,
- {
+  },
+  {
     timestamps: true,
   }
 );
 
 itemSchema.index({
-    itemName:"text",
-    category:"text",
-    sku:"text"
-}
-)
-module.exports=mongoose.model("Item",itemSchema);
+  itemName: "text",
+  category: "text",
+  sku: "text",
+});
+module.exports = mongoose.model("Item", itemSchema);

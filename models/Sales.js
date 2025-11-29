@@ -2,10 +2,21 @@ const mongoose = require("mongoose");
 
 const salesSchema = new mongoose.Schema(
   {
-    customer: {
-      type: String,
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
+    },
+
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Customer",
+      default: null,
+    },
+    walkInCustomer: {
+      type: String,
       trim: true,
+      default: "Walk-in",
     },
     items: [
       {
@@ -36,16 +47,16 @@ const salesSchema = new mongoose.Schema(
     },
     paymentType: {
       type: String,
-      enum: ["cash", "credit", "half"],
+      enum: ["cash","credit","online"],
       default: "cash",
     },
   },
-  { 
-    timestamps: true
-   }
+  {
+    timestamps: true,
+  }
 );
 salesSchema.index({
-  customer:"text",
-})
+  walkInCustomer: "text",
+});
 
 module.exports = mongoose.model("Sales", salesSchema);
