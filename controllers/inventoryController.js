@@ -38,31 +38,41 @@ const addItem = async (req, res) => {
 
 const getItems = async (req, res) => {
   try {
-    const { search, sort, category } = req.query;
+    const { search, sort, category, stock } = req.query;
     let query = { userId: req.user.id };
 
-    //search filter
+    // Search filter
     if (search) {
-      const orConditions = [
+      query.$or = [
         { itemName: { $regex: search, $options: "i" } },
         { sku: { $regex: search, $options: "i" } },
       ];
-      query.$or = orConditions;
     }
-    //category
+
+    // Category filter
     if (category) {
       query.category = category;
     }
+
+    // Stock filter
+    if (stock === "low") {
+      query.stock = { $gt: 0, $lte: 5 }; // adjust 5 to your low-stock threshold
+    } else if (stock === "out") {
+      query.stock = 0;
+    }
+
+    // Build query
     let inventoryQuery = Item.find(query);
 
-    //sorting
-    if (!sort || sort == "latest") {
+    // Sorting
+    if (!sort || sort === "latest") {
       inventoryQuery = inventoryQuery.sort({ _id: -1 });
-    } else if (sort == "oldest") {
+    } else if (sort === "oldest") {
       inventoryQuery = inventoryQuery.sort({ _id: 1 });
     } else {
       inventoryQuery = inventoryQuery.sort({ _id: -1 });
     }
+
     const items = await inventoryQuery.exec();
     res.status(200).json(items);
   } catch (err) {
@@ -70,6 +80,7 @@ const getItems = async (req, res) => {
     res.status(500).json({ Error: "Internal Server Error" });
   }
 };
+
 
 //get Item by ID
 const getItemByID = async (req, res) => {

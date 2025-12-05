@@ -64,15 +64,17 @@ const addSales = async (req, res) => {
 
 
 //getAllSales
-const getSales = async (req,res)=>{
-    try{
-        const sales = await Sales.find({ userId: req.user.id });
-       res.status(200).json(sales);
-    }
-      catch(err){
-    res.status(400).json({Error:err.message});
+const getSales = async (req, res) => {
+  try {
+    const sales = await Sales.find({ userId: req.user.id })
+      .populate("items.product", "itemName sku image"); // populate name and sku
+
+    res.status(200).json(sales);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-}
+};
+
 
 //search Item
 const searchSales =async(req,res)=>{
@@ -96,17 +98,20 @@ const searchSales =async(req,res)=>{
 }
 
 //getSalesbyID
-const getSalesbyID = async (req,res)=>{
-    try{
-        const id = req.params.id
-        const sale = await Sales.findOne({ _id: id, userId: req.user.id });
-        if(!sales) return res.status(404).json({error:"NOT_FOUND"});
-        res.status(200).json(sales);
-    }
-      catch(err){
-    res.status(400).json({Error:err.message});
+const getSalesbyID = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const sale = await Sales.findOne({ _id: id, userId: req.user.id })
+      .populate("items.product", "itemName sku"); // populate name and sku
+
+    if (!sale) return res.status(404).json({ error: "NOT_FOUND" });
+
+    res.status(200).json(sale);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
-}
+};
+
 
 //updateSales
 const updateSales = async (req,res)=>{
