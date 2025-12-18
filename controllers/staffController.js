@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const sendEmail = require("../utils/sendEmail"); 
+const sendStaffCredentials = require("../utils/sendStaffCredentials");
 const generateStaffEmail = require("../utils/generateStaffEmail");
 
 // --- CREATE STAFF ---
@@ -42,20 +42,15 @@ const addStaff = async (req, res) => {
       salary,
     });
 
-    // Optional: send credentials to personal email
+   
     
-    await sendEmail({
-      to: staffEmail,
-      subject: "Your Staff Account Login Details",
-      html: `
-        <p>Hello ${name},</p>
-        <p>Thanks for using Stockmate.</p>
-        <p>Your staff account has been created.</p>
-        <p><strong>Login Email:</strong> ${email}</p>
-        <p><strong>Password:</strong> ${password}</p>
-        <p>Please change your password after first login.</p>
-      `,
-    });
+  await sendStaffCredentials({
+  to: staffEmail,
+  name,
+  loginEmail: email,
+  password, 
+});
+
     
 
     res.status(201).json({
@@ -186,6 +181,40 @@ const resetStaffPassword = async (req, res) => {
   }
 };
 
+// --- RESEND STAFF CREDENTIALS (admin only) ---
+const resendStaffCredentials = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Only admin allowed" });
+    }
+
+    const staff = await User.findOne({
+      _id: req.params.id,
+      role: "staff",
+      shopName: req.user.shopName,
+    });
+
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    const sendStaffCredentials = require("../utils/sendStaffCredentials");
+
+    await sendStaffCredentials({
+      to: staff.staffEmail,
+      name: staff.name,
+      loginEmail: staff.email,
+      password: null, 
+    });
+
+    res.json({ message: "Credentials email resent successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to resend credentials" });
+  }
+};
+
+
 // --- DELETE STAFF ---
 const deleteStaff = async (req, res) => {
   try {
@@ -213,6 +242,7 @@ module.exports = {
   getStaffById,
   updateStaff,
   resetStaffPassword,
+  resendStaffCredentials,
   deleteStaff,
   
 };
