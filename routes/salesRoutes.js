@@ -1,24 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
-const { getSales,getSalesbyID,addSales, updateSales, deleteSales, searchSales } = require("../controllers/salesController");
+const {
+  getSales,
+  getSalesbyID,
+  addSales,
+  updateSales,
+  deleteSales,
+  searchSales
+} = require("../controllers/salesController");
 
-// Get all Sales
-router.get("/sales",authMiddleware, getSales);
+// Public for logged-in users
+router.get("/sales", authMiddleware, getSales);
+router.get("/sales/search", authMiddleware, searchSales);
+router.get("/sales/:id", authMiddleware, getSalesbyID);
 
-//search Customer 
-router.get("/sales/search",authMiddleware,searchSales);
+// Add sale (staff + admin)
+router.post("/sales", authMiddleware, addSales);
 
-// Get Sales by ID
-router.get("/sales/:id",authMiddleware, getSalesbyID);
+// Update / Delete sale (admin only)
+router.put("/sales/:id", authMiddleware, updateSales);
+router.delete("/sales/:id", authMiddleware, deleteSales);
 
-// Add a new Sales
-router.post("/sales",authMiddleware, addSales);
-
-// Update Sales by ID
-router.put("/sales/:id",authMiddleware, updateSales);
-
-// Delete Sales by ID
-router.delete("/sales/:id",authMiddleware, deleteSales);
-
-module.exports=router;
+module.exports = router;

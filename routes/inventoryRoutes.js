@@ -1,25 +1,27 @@
 const express = require("express");
-const { getItems, getItemByID, addItem, updateItem, deleteItem, searchItem, filterItemByCategory } = require("../controllers/inventoryController");
+const {
+  getItems,
+  getItemByID,
+  addItem,
+  updateItem,
+  deleteItem
+} = require("../controllers/inventoryController");
 const authMiddleware = require("../middleware/authMiddleware");
-const router = express.Router();
 const multer = require("multer");
 const storage = multer.memoryStorage();
-const upload = multer  ({storage});
+const upload = multer({ storage });
 
+const router = express.Router();
 
-// Get all Items
-router.get("/inventory",authMiddleware, getItems);
+// Routes
+router.get("/inventory", authMiddleware, getItems);
+router.get("/inventory/:id", authMiddleware, getItemByID);
 
-// Get Item by ID
-router.get("/inventory/:id",authMiddleware, getItemByID);
+// Add item (staff + admin)
+router.post("/inventory", authMiddleware, upload.single("image"), addItem);
 
-// Add a new Item
-router.post("/inventory",upload.single("image"), authMiddleware,addItem);
-
-// Update Item by ID
-router.put("/inventory/:id" ,upload.single("image"),authMiddleware, updateItem);
-
-// Delete Item by ID
-router.delete("/inventory/:id",authMiddleware, deleteItem);
+// Update / Delete (admin only)
+router.put("/inventory/:id", authMiddleware, upload.single("image"), updateItem);
+router.delete("/inventory/:id", authMiddleware, deleteItem);
 
 module.exports = router;
