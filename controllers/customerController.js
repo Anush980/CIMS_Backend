@@ -1,6 +1,6 @@
 const Customer = require("../models/Customer");
 
-// Add Customer
+// Add Customer (accessible by admin and staff)
 const addCustomer = async (req, res) => {
   try {
     const customer = await Customer.create({
@@ -14,13 +14,12 @@ const addCustomer = async (req, res) => {
   }
 };
 
-// Get Customers (with search + sort + optional category)
+// Get Customers (accessible by admin and staff)
 const getCustomers = async (req, res) => {
   try {
     const { search, sort } = req.query;
     let query = { userId: req.user.id };
 
-    // Search filter
     if (search) {
       const orConditions = [
         { customerName: { $regex: search, $options: "i" } },
@@ -28,7 +27,6 @@ const getCustomers = async (req, res) => {
         { customerAddress: { $regex: search, $options: "i" } },
       ];
 
-      // If search looks like a number, include phone
       if (!isNaN(Number(search))) {
         orConditions.push({ customerPhone: Number(search) });
       }
@@ -38,7 +36,6 @@ const getCustomers = async (req, res) => {
 
     let customersQuery = Customer.find(query);
 
-    // Sorting
     if (sort === "recent") {
       customersQuery = customersQuery.sort({ createdAt: -1 });
     } else if (sort === "oldest") {
@@ -54,13 +51,12 @@ const getCustomers = async (req, res) => {
   }
 };
 
-// Get Customer by ID
+// Get Customer by ID (accessible by admin and staff)
 const getCustomerById = async (req, res) => {
   try {
-    const id = req.params.id;
-     const customer = await Customer.findOne({
-      _id: id,
-      userId: req.user.id,  
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
     });
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
@@ -69,15 +65,19 @@ const getCustomerById = async (req, res) => {
   }
 };
 
-// Update Customer
+// Update Customer (admin only)
 const updateCustomer = async (req, res) => {
   try {
-    const id = req.params.id;
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ Error: "Access denied. Admins only." });
+    }
+
     const customer = await Customer.findOneAndUpdate(
-      { _id: id, userId: req.user.id },  
+      { _id: req.params.id, userId: req.user.id },
       req.body,
       { new: true }
     );
+
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
   } catch (err) {
@@ -85,14 +85,18 @@ const updateCustomer = async (req, res) => {
   }
 };
 
-// Delete Customer
+// Delete Customer (admin only)
 const deleteCustomer = async (req, res) => {
   try {
-    const id = req.params.id;
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ Error: "Access denied. Admins only." });
+    }
+
     const customer = await Customer.findOneAndDelete({
-      _id: id,
-      userId: req.user.id,   
+      _id: req.params.id,
+      userId: req.user.id,
     });
+
     if (!customer) return res.status(404).json({ Error: "Not Found" });
     res.status(200).json(customer);
   } catch (err) {

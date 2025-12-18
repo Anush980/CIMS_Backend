@@ -2,58 +2,88 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
 const registerUser = async (req, res) => {
-    const { email, password } = req.body;
+  const { shopName, email, password,  } = req.body;
 
-    try {
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
-        }
-         const hashedPassword = await bcrypt.hash(password, 10);
-         
-        const newUser = new User({ email, password: hashedPassword });
-        await newUser.save();
+  try {
+    // Check if the email already exists for this shop
+    const existingUser = await User.findOne({ email, shopName });
+    if (existingUser) {
+      return res.status(400).json({ message: "User already exists for this shop" });
+    }
 
-        res.status(201).json({ message: "User registered successfully" });
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Internal Server error" });
-    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    
+    const newUser = new User({
+      shopName,
+      email,
+      password: hashedPassword,
+      role: "admin",
+      jobTitle:"Owner"
+    });
+
+    await newUser.save();
+
+    res.status(201).json({
+      message: "Shop admin registered successfully",
+      user: {
+        id: newUser._id,
+        shopName: newUser.shopName,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
+
 const loginUser = async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const existingUser = await User.findOne({ email });
-        if (!existingUser) {
-            return res.status(400).json({ message: "Invalid email or password" });
-        }
-        const isPasswordValid = await bcrypt.compare(password, existingUser.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ message: "Invalid email or password" });
-        }
+  const { shopName,email, password,  } = req.body;
 
-        const token = jwt.sign({
-            id: existingUser._id,
-            email: existingUser.email
-        },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' });
-
-        res.status(200).json({
-            message: 'Login Successful',
-            user: {
-                id: existingUser._id,
-                email: existingUser.email
-            }, token
-        });
+  try {
+   
+    const user = await User.findOne({ email});
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Couldn't connect to the network" })
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Invalid email or password" });
     }
-}
-module.exports = { registerUser ,loginUser};
+
+    // Sign JWT with shop info
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        shopName: user.shopName
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Login Successful",
+      user: {
+        id: user._id,
+        shopName: user.shopName,
+        email: user.email,
+        role: user.role,
+        jobTitle: user.jobTitle
+      },
+      token
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+module.exports = { registerUser, loginUser };
