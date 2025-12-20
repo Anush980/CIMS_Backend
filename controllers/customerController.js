@@ -1,24 +1,52 @@
+// src/controllers/customerController.js
 const Customer = require("../models/Customer");
+const cloudinary = require("../config/cloudinary");
+const streamifier = require("streamifier");
+const { canAdd, canEdit, canDelete } = require("../utils/permissions");
 
-// Add Customer (accessible by admin and staff)
+
+const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1763129723/inventory/mg7cgrtt647e1qpbgxtk.png`;
+
+// --- Add Customer ---
+// Accessible by admin and staff (or owner if needed)
 const addCustomer = async (req, res) => {
+  if (!canAdd(req.user.role)) {
+  return res.status(403).json({ message: "Access denied" });
+}
   try {
+    let imageUrl = DEFAULT_IMAGE_URL;
+
+    if (req.file) {
+      imageUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "customers" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result.secure_url);
+          }
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    }
+
     const customer = await Customer.create({
-      userId: req.user.id,   
-      ...req.body,
+      userId: req.user._id,
+      ...req.body, // expects customerName, customerPhone, etc.
+      image: imageUrl,
     });
 
-    res.status(200).json(customer);
+    res.status(201).json(customer);
   } catch (err) {
-    res.status(400).json({ Error: err.message });
+    console.error("Add Customer Error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Get Customers (accessible by admin and staff)
+// --- Get Customers ---
 const getCustomers = async (req, res) => {
   try {
     const { search, sort } = req.query;
-    let query = { userId: req.user.id };
+    let query = { userId: req.user._id };
 
     if (search) {
       const orConditions = [
@@ -26,81 +54,93 @@ const getCustomers = async (req, res) => {
         { customerEmail: { $regex: search, $options: "i" } },
         { customerAddress: { $regex: search, $options: "i" } },
       ];
-
-      if (!isNaN(Number(search))) {
-        orConditions.push({ customerPhone: Number(search) });
-      }
-
+      if (!isNaN(Number(search))) orConditions.push({ customerPhone: Number(search) });
       query.$or = orConditions;
     }
 
     let customersQuery = Customer.find(query);
 
-    if (sort === "recent") {
-      customersQuery = customersQuery.sort({ createdAt: -1 });
-    } else if (sort === "oldest") {
-      customersQuery = customersQuery.sort({ createdAt: 1 });
-    } else {
-      customersQuery = customersQuery.sort({ _id: -1 });
-    }
+    if (sort === "recent") customersQuery = customersQuery.sort({ createdAt: -1 });
+    else if (sort === "oldest") customersQuery = customersQuery.sort({ createdAt: 1 });
+    else customersQuery = customersQuery.sort({ _id: -1 });
 
     const customers = await customersQuery;
     res.status(200).json(customers);
   } catch (err) {
-    res.status(400).json({ Error: err.message });
+    console.error("Get Customers Error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Get Customer by ID (accessible by admin and staff)
+// --- Get Customer By ID ---
 const getCustomerById = async (req, res) => {
   try {
-    const customer = await Customer.findOne({
-      _id: req.params.id,
-      userId: req.user.id,
-    });
-    if (!customer) return res.status(404).json({ Error: "Not Found" });
+    const customer = await Customer.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
     res.status(200).json(customer);
   } catch (err) {
-    res.status(400).json({ Error: err.message });
+    console.error("Get Customer By ID Error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Update Customer (admin only)
+// --- Update Customer ---
 const updateCustomer = async (req, res) => {
+  if (!canEdit(req.user.role)) {
+  return res.status(403).json({ message: "Only admin or owner can update items" });
+}
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ Error: "Access denied. Admins only." });
+    if (req.user.role === "staff" && !req.user.permissions.canEdit) {
+      return res.status(403).json({ error: "Contact shop owner to update customer" });
+    }
+
+    let updateData = { ...req.body };
+
+    if (req.file) {
+      const imageUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "customers" },
+          (error, result) => (error ? reject(error) : resolve(result.secure_url))
+        );
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+      updateData.image = imageUrl;
     }
 
     const customer = await Customer.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.id },
-      req.body,
+      { _id: req.params.id, userId: req.user._id },
+      updateData,
       { new: true }
     );
 
-    if (!customer) return res.status(404).json({ Error: "Not Found" });
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
     res.status(200).json(customer);
   } catch (err) {
-    res.status(400).json({ Error: err.message });
+    console.error("Update Customer Error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
 
-// Delete Customer (admin only)
+// --- Delete Customer ---
 const deleteCustomer = async (req, res) => {
+  if (!canDelete(req.user.role)) {
+  return res.status(403).json({ message: "Only admin or owner can delete items" });
+}
   try {
-    if (req.user.role !== "admin") {
-      return res.status(403).json({ Error: "Access denied. Admins only." });
+    if (req.user.role === "staff" && !req.user.permissions.canDelete) {
+      return res.status(403).json({ error: "Contact shop owner to delete customer" });
     }
 
     const customer = await Customer.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user.id,
+      userId: req.user._id,
     });
 
-    if (!customer) return res.status(404).json({ Error: "Not Found" });
-    res.status(200).json(customer);
+    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    res.status(200).json({ message: "Customer deleted successfully" });
   } catch (err) {
-    res.status(400).json({ Error: err.message });
+    console.error("Delete Customer Error:", err);
+    res.status(400).json({ error: err.message });
   }
 };
 

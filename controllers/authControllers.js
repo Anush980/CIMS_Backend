@@ -4,42 +4,56 @@ const jwt = require("jsonwebtoken");
 
 
 const registerUser = async (req, res) => {
-  const { shopName, email, password,  } = req.body;
+  const {name, shopName, email, password } = req.body;
 
   try {
-    // Check if the email already exists for this shop
-    const existingUser = await User.findOne({ email, shopName });
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists for this shop" });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    
+    // Determine role
+    let role = "owner"; // default for everyone registering
+    let superAdmin = false;
+
+    // If no admin exists yet, this first user becomes superAdmin
+    const adminExists = await User.exists({ role: "admin" });
+    if (!adminExists) {
+      role = "admin";
+      superAdmin = true; // only first user
+    }
+
     const newUser = new User({
+      name,
       shopName,
       email,
       password: hashedPassword,
-      role: "admin",
-      jobTitle:"Owner"
+      role,
+      jobTitle: "Owner",
+      superAdmin,
     });
 
     await newUser.save();
 
     res.status(201).json({
-      message: "Shop admin registered successfully",
+      message: "User registered successfully",
       user: {
         id: newUser._id,
         shopName: newUser.shopName,
         email: newUser.email,
-        role: newUser.role
-      }
+        role: newUser.role,
+      },
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 
 
 const loginUser = async (req, res) => {
