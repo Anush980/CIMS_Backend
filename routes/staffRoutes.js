@@ -5,17 +5,26 @@ const {
   getStaffById,
   updateStaff,
   deleteStaff,
-  resendStaffCredentials
+  resendStaffCredentials,
+  resetStaffPassword, 
 } = require("../controllers/staffController");
+
 const authMiddleware = require("../middleware/authMiddleware");
+const multer = require("multer");
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 const router = express.Router();
 
-router.get("/", authMiddleware, getStaffs); // Get all staff
-router.post("/", authMiddleware, addStaff); // Create staff
-router.post("/:id/resend-credentials", authMiddleware, resendStaffCredentials); //resend credentials
-router.get("/:id", authMiddleware, getStaffById); // Get staff by ID
-router.put("/:id", authMiddleware, updateStaff); // Update staff
-router.delete("/:id", authMiddleware, deleteStaff); // Delete staff
+router.get("/staff", authMiddleware, getStaffs);
+router.post("/staff", authMiddleware,upload.single("image"), addStaff);
+
+router.post("/staff/:id/resend-credentials", authMiddleware, resendStaffCredentials);
+
+router.put("/staff/:id/password", authMiddleware, resetStaffPassword);
+
+router.get("/staff/:id", authMiddleware, getStaffById);
+router.put("/staff/:id", authMiddleware,upload.single("image"), updateStaff);
+router.delete("/staff/:id", authMiddleware, deleteStaff);
 
 module.exports = router;

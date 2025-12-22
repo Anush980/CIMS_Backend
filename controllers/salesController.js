@@ -17,7 +17,7 @@ if (!canAdd(req.user.role)) {
     // Validate customer if provided
     let customer = null;
     if (customerId) {
-      customer = await Customer.findOne({ _id: customerId, userId: req.user.id });
+      customer = await Customer.findOne({ _id: customerId, shopName: req.user.shopName });
       if (!customer) return res.status(400).json({ error: "Customer not found" });
     }
 
@@ -25,7 +25,7 @@ if (!canAdd(req.user.role)) {
     let total = 0;
     for (let i = 0; i < items.length; i++) {
       const { product: itemId, quantity } = items[i];
-      const item = await Item.findOne({ _id: itemId, userId: req.user.id });
+      const item = await Item.findOne({ _id: itemId, shopName: req.user.shopName });
       if (!item) return res.status(400).json({ error: `Item not found: ${itemId}` });
       if (item.stock < quantity) return res.status(400).json({ error: `Not enough stock for ${item.itemName}` });
 
@@ -37,7 +37,8 @@ if (!canAdd(req.user.role)) {
 
     // Create sale record
     const sale = await Sales.create({
-      userId: req.user.id,
+      shopName: req.user.shopName,
+      createdBy: req.user._id,
       customerId: customer ? customer._id : null,
       walkInCustomer: customer ? null : walkInCustomer || "Walk-in",
       items,
@@ -68,7 +69,7 @@ if (!canAdd(req.user.role)) {
 const getSales = async (req, res) => {
   
   try {
-    const sales = await Sales.find({ userId: req.user.id }).populate("items.product", "itemName sku image");
+    const sales = await Sales.find({shopName: req.user.shopName }).populate("items.product", "itemName sku image");
     res.status(200).json(sales);
   } catch (err) {
     console.error("Get Sales Error:", err);
@@ -79,7 +80,7 @@ const getSales = async (req, res) => {
 // --- GET SALE BY ID ---
 const getSalesbyID = async (req, res) => {
   try {
-    const sale = await Sales.findOne({ _id: req.params.id, userId: req.user.id }).populate("items.product", "itemName sku");
+    const sale = await Sales.findOne({ _id: req.params.id, shopName: req.user.shopName }).populate("items.product", "itemName sku");
     if (!sale) return res.status(404).json({ error: "Sale not found" });
     res.status(200).json(sale);
   } catch (err) {
@@ -96,7 +97,7 @@ const updateSales = async (req, res) => {
 }
 
   try {
-    const sale = await Sales.findOneAndUpdate({ _id: req.params.id, userId: req.user.id }, req.body, { new: true });
+    const sale = await Sales.findOneAndUpdate({ _id: req.params.id, shopName: req.user.shopName }, req.body, { new: true });
     if (!sale) return res.status(404).json({ error: "Sale not found" });
     res.status(200).json(sale);
   } catch (err) {
@@ -113,7 +114,7 @@ const deleteSales = async (req, res) => {
   return res.status(403).json({ message: "Only admin or owner can delete items" });
 }
   try {
-    const sale = await Sales.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    const sale = await Sales.findOneAndDelete({ _id: req.params.id, shopName: req.user.shopName });
     if (!sale) return res.status(404).json({ error: "Sale not found" });
     res.status(200).json(sale);
   } catch (err) {
@@ -129,7 +130,7 @@ const searchSales = async (req, res) => {
     const { q } = req.query;
     if (!q) return res.json([]);
     const results = await Sales.find({
-      userId: req.user.id,
+     shopName: req.user.shopName,
       $or: [{ walkInCustomer: { $regex: q, $options: "i" } }],
     });
     res.status(200).json(results);

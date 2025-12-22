@@ -34,3 +34,4 @@ coverage/
 .idea/
 
 /src/generated/prisma
+.dockerignore

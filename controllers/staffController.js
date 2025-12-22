@@ -46,6 +46,7 @@ const addStaff = async (req, res) => {
       email,
       password: hashedPassword,
       role: "staff",
+      ownerId:req.user.id,
       shopName: req.user.shopName,
       jobTitle: jobTitle || "Staff",
       staffPhone,
@@ -67,6 +68,7 @@ const addStaff = async (req, res) => {
       message: "Staff created successfully",
       staff: {
         _id: newStaff._id,
+        ownerId:newStaff.ownerId,
         name: newStaff.name,
         email: newStaff.email,
         staffEmail: newStaff.staffEmail,

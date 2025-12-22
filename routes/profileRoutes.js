@@ -5,8 +5,8 @@ const { getProfile, updatePassword,updateProfile } = require("../controllers/pro
 const authMiddleware = require("../middleware/authMiddleware");
 
 // Get current logged-in user's profile
-router.get("/", authMiddleware, getProfile);
-router.put("/", authMiddleware, updateProfile);
+router.get("/profile", authMiddleware, getProfile);
+router.put("/profile", authMiddleware, updateProfile);
 // Update current logged-in user's password
 router.put("/password", authMiddleware, updatePassword);
 

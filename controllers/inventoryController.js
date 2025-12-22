@@ -10,8 +10,8 @@ const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_C
 // Accessible by staff + admin (future: owner too if needed)
 const addItem = async (req, res) => {
   if (!canAdd(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+    return res.status(403).json({ message: "Access denied" });
+  }
   try {
     let imageUrl = DEFAULT_IMAGE_URL;
 
@@ -30,7 +30,8 @@ const addItem = async (req, res) => {
     }
 
     const item = await Item.create({
-      userId: req.user._id, // consistent usage
+      shopName: req.user.shopName,
+      createdBy: req.user._id,
       ...req.body,
       image: imageUrl,
     });
@@ -43,11 +44,10 @@ const addItem = async (req, res) => {
 };
 
 // --- Get Items ---
-// Accessible by all roles; supports search, category filter, stock filter, and sorting
 const getItems = async (req, res) => {
   try {
     const { search, sort, category, stock } = req.query;
-    let query = { userId: req.user._id };
+    let query = { shopName: req.user.shopName };
 
     if (search) {
       query.$or = [
@@ -75,9 +75,11 @@ const getItems = async (req, res) => {
 
 // --- Get Item by ID ---
 const getItemByID = async (req, res) => {
-
   try {
-    const item = await Item.findOne({ _id: req.params.id, userId: req.user._id });
+    const item = await Item.findOne({
+      _id: req.params.id,
+      shopName: req.user.shopName,
+    });
     if (!item) return res.status(404).json({ error: "Item not found" });
     res.status(200).json(item);
   } catch (err) {
@@ -88,10 +90,11 @@ const getItemByID = async (req, res) => {
 
 // --- Update Item ---
 const updateItem = async (req, res) => {
-
-if (!canEdit(req.user.role)) {
-  return res.status(403).json({ message: "Only admin or owner can update items" });
-}
+  if (!canEdit(req.user.role)) {
+    return res
+      .status(403)
+      .json({ message: "Only admin or owner can update items" });
+  }
 
   try {
     const id = req.params.id;
@@ -102,7 +105,8 @@ if (!canEdit(req.user.role)) {
       const imageUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "inventory" },
-          (error, result) => (error ? reject(error) : resolve(result.secure_url))
+          (error, result) =>
+            error ? reject(error) : resolve(result.secure_url)
         );
         streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
@@ -110,7 +114,7 @@ if (!canEdit(req.user.role)) {
     }
 
     const item = await Item.findOneAndUpdate(
-      { _id: id, userId: req.user._id },
+      { _id: id, shopName: req.user.shopName },
       updateData,
       { new: true }
     );
@@ -125,12 +129,17 @@ if (!canEdit(req.user.role)) {
 
 // --- Delete Item ---
 const deleteItem = async (req, res) => {
-if (!canDelete(req.user.role)) {
-  return res.status(403).json({ message: "Only admin or owner can delete items" });
-}
+  if (!canDelete(req.user.role)) {
+    return res
+      .status(403)
+      .json({ message: "Only admin or owner can delete items" });
+  }
 
   try {
-    const item = await Item.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+    const item = await Item.findOneAndDelete({
+      _id: req.params.id,
+      shopName: req.user.shopName,
+    });
     if (!item) return res.status(404).json({ error: "Item not found" });
     res.status(200).json({ message: "Item deleted successfully" });
   } catch (err) {
