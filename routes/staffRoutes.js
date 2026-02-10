@@ -19,7 +19,7 @@ const router = express.Router();
 router.get("/staff", authMiddleware, getStaffs);
 router.post("/staff", authMiddleware,upload.single("image"), addStaff);
 
-router.post("/staff/:id/resend-credentials", authMiddleware, resendStaffCredentials);
+router.post("/staff/:id/resend", authMiddleware, resendStaffCredentials);
 
 router.put("/staff/:id/password", authMiddleware, resetStaffPassword);
 

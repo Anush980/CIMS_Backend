@@ -6,47 +6,88 @@ const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
 const { canManageStaff } = require("../utils/permissions");
 
-
 // Default staff image URL
 const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1766223130/blank-profile_ouv09u.jpg`;
 
-// --- CREATE STAFF ---
-const addStaff = async (req, res) => {
+// Default password used when creating staff without a password, or when resending credentials
+const SUPER_PASSWORD = process.env.STAFF_SUPER_PASSWORD || "default123";
+
+// ─── Shared Helpers ────────────────────────────────────────────────────────────
+
+/**
+ * Centralized auth guard — call this at the top of every handler.
+ * Returns true if the request should be blocked (and already sends the 403).
+ */
+const denyIfNotAuthorized = (req, res) => {
   if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+    res.status(403).json({ message: "Access denied" });
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Upload a file buffer to Cloudinary and return the secure URL.
+ */
+const uploadToCloudinary = (fileBuffer) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "staff" },
+      (error, result) => (error ? reject(error) : resolve(result.secure_url))
+    );
+    streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
+
+/**
+ * Centralized error responder — always includes the error message so Postman
+ * shows you exactly what went wrong.
+ */
+const sendError = (res, statusCode, message, err) => {
+  console.error(`[Staff Error] ${message}`, err);
+  return res.status(statusCode).json({
+    message,
+    error: err?.message || String(err),
+    ...(process.env.NODE_ENV !== "production" && { stack: err?.stack }),
+  });
+};
+
+// ─── CREATE STAFF ──────────────────────────────────────────────────────────────
+
+const addStaff = async (req, res) => {
+  if (denyIfNotAuthorized(req, res)) return;
+
   try {
-   if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
+    const {
+      name,
+      jobTitle,
+      staffPhone,
+      staffEmail,
+      staffAddress,
+      salary,
+    } = req.body;
 
+    // Use provided password or fall back to the super/default password
+    const rawPassword = req.body.password?.trim() || SUPER_PASSWORD;
 
-    const { name, jobTitle, password, staffPhone, staffEmail, staffAddress, salary } = req.body;
-
-    if (!name || !password || !staffEmail)
-      return res.status(400).json({ message: "Name, password, and personal email are required" });
-
-    // Generate unique login email for staff
-    const email = await generateStaffEmail(name, req.user.shopName);
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Handle image upload
-    let imageUrl = DEFAULT_IMAGE_URL;
-    if (req.file) {
-      imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "staff" },
-          (error, result) => (error ? reject(error) : resolve(result.secure_url))
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
+    if (!name || !staffEmail) {
+      return res
+        .status(400)
+        .json({ message: "Name and personal email are required" });
     }
+
+    const email = await generateStaffEmail(name, req.user.shopName);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+
+    const imageUrl = req.file
+      ? await uploadToCloudinary(req.file.buffer)
+      : DEFAULT_IMAGE_URL;
 
     const newStaff = await User.create({
       name,
       email,
       password: hashedPassword,
       role: "staff",
-      ownerId:req.user.id,
+      ownerId: req.user.id,
       shopName: req.user.shopName,
       jobTitle: jobTitle || "Staff",
       staffPhone,
@@ -56,19 +97,18 @@ const addStaff = async (req, res) => {
       image: imageUrl,
     });
 
-    // Send credentials email to staff
     await sendStaffCredentials({
       to: staffEmail,
       name,
       loginEmail: email,
-      password,
+      password: rawPassword,
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Staff created successfully",
       staff: {
         _id: newStaff._id,
-        ownerId:newStaff.ownerId,
+        ownerId: newStaff.ownerId,
         name: newStaff.name,
         email: newStaff.email,
         staffEmail: newStaff.staffEmail,
@@ -80,22 +120,18 @@ const addStaff = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Add Staff Error:", err);
-    res.status(500).json({ message: "Failed to create staff" });
+    return sendError(res, 500, "Failed to create staff", err);
   }
 };
 
-// --- GET ALL STAFF (Admin Only) ---
-const getStaffs = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
-  try {
-   if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
+// ─── GET ALL STAFF ─────────────────────────────────────────────────────────────
 
+const getStaffs = async (req, res) => {
+  if (denyIfNotAuthorized(req, res)) return;
+
+  try {
     const { search, sort } = req.query;
-    let query = { role: "staff", shopName: req.user.shopName };
+    const query = { role: "staff", shopName: req.user.shopName };
 
     if (search) {
       query.$or = [
@@ -112,22 +148,18 @@ const getStaffs = async (req, res) => {
     else staffsQuery = staffsQuery.sort({ _id: -1 });
 
     const staffs = await staffsQuery;
-    res.status(200).json(staffs);
+    return res.status(200).json(staffs);
   } catch (err) {
-    console.error("Get Staffs Error:", err);
-    res.status(500).json({ message: "Failed to fetch staff" });
+    return sendError(res, 500, "Failed to fetch staff", err);
   }
 };
 
-// --- GET STAFF BY ID (Admin Only) ---
-const getStaffById = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
-  try {
-   if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
+// ─── GET STAFF BY ID ───────────────────────────────────────────────────────────
 
+const getStaffById = async (req, res) => {
+  if (denyIfNotAuthorized(req, res)) return;
+
+  try {
     const staff = await User.findOne({
       _id: req.params.id,
       role: "staff",
@@ -136,38 +168,29 @@ const getStaffById = async (req, res) => {
 
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
-    res.status(200).json(staff);
+    return res.status(200).json(staff);
   } catch (err) {
-    console.error("Get Staff By ID Error:", err);
-    res.status(500).json({ message: "Failed to fetch staff" });
+    return sendError(res, 500, "Failed to fetch staff", err);
   }
 };
 
-// --- UPDATE STAFF (Admin Only) ---
+// ─── UPDATE STAFF ──────────────────────────────────────────────────────────────
+
 const updateStaff = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+  if (denyIfNotAuthorized(req, res)) return;
+
   try {
-    if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
+    const { name, jobTitle, staffPhone, staffAddress, salary, password } =
+      req.body;
 
-
-    const { name, jobTitle, staffPhone, staffAddress, salary, password } = req.body;
     const updateData = { name, jobTitle, staffPhone, staffAddress, salary };
 
-    if (password) updateData.password = await bcrypt.hash(password, 10);
+    if (password?.trim()) {
+      updateData.password = await bcrypt.hash(password.trim(), 10);
+    }
 
-    // Handle image update
     if (req.file) {
-      const imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "staff" },
-          (error, result) => (error ? reject(error) : resolve(result.secure_url))
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-      updateData.image = imageUrl;
+      updateData.image = await uploadToCloudinary(req.file.buffer);
     }
 
     const updatedStaff = await User.findOneAndUpdate(
@@ -176,29 +199,25 @@ const updateStaff = async (req, res) => {
       { new: true }
     ).select("-password");
 
-    if (!updatedStaff) return res.status(404).json({ message: "Staff not found" });
+    if (!updatedStaff)
+      return res.status(404).json({ message: "Staff not found" });
 
-    res.status(200).json(updatedStaff);
+    return res.status(200).json(updatedStaff);
   } catch (err) {
-    console.error("Update Staff Error:", err);
-    res.status(500).json({ message: "Failed to update staff" });
+    return sendError(res, 500, "Failed to update staff", err);
   }
 };
 
-// --- RESET STAFF PASSWORD (Admin Only) ---
+// ─── RESET STAFF PASSWORD ──────────────────────────────────────────────────────
+
 const resetStaffPassword = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+  if (denyIfNotAuthorized(req, res)) return;
+
   try {
-  if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
+    // Fall back to super password if no new password is supplied
+    const rawPassword = req.body.newPassword?.trim() || SUPER_PASSWORD;
 
-
-    const { newPassword } = req.body;
-    if (!newPassword) return res.status(400).json({ message: "New password is required" });
-
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(rawPassword, 10);
 
     const staff = await User.findOneAndUpdate(
       { _id: req.params.id, role: "staff", shopName: req.user.shopName },
@@ -208,23 +227,21 @@ const resetStaffPassword = async (req, res) => {
 
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
-    res.json({ message: "Password reset successfully" });
+    return res.json({
+      message: "Password reset successfully",
+      usedDefaultPassword: !req.body.newPassword?.trim(),
+    });
   } catch (err) {
-    console.error("Reset Staff Password Error:", err);
-    res.status(500).json({ message: "Failed to reset password" });
+    return sendError(res, 500, "Failed to reset password", err);
   }
 };
 
-// --- RESEND STAFF CREDENTIALS (Admin Only) ---
+// ─── RESEND STAFF CREDENTIALS ──────────────────────────────────────────────────
+
 const resendStaffCredentials = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+  if (denyIfNotAuthorized(req, res)) return;
+
   try {
-  if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
-
-
     const staff = await User.findOne({
       _id: req.params.id,
       role: "staff",
@@ -233,30 +250,32 @@ const resendStaffCredentials = async (req, res) => {
 
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
+    // Reset to super password so the email contains a usable credential
+    const hashed = await bcrypt.hash(SUPER_PASSWORD, 10);
+    staff.password = hashed;
+    await staff.save();
+
     await sendStaffCredentials({
       to: staff.staffEmail,
       name: staff.name,
       loginEmail: staff.email,
-      password: null,
+      password: SUPER_PASSWORD,
     });
 
-    res.json({ message: "Credentials email resent successfully" });
+    return res.json({
+      message: "Credentials resent successfully. Password has been reset to the default.",
+    });
   } catch (err) {
-    console.error("Resend Staff Credentials Error:", err);
-    res.status(500).json({ message: "Failed to resend credentials" });
+    return sendError(res, 500, "Failed to resend credentials", err);
   }
 };
 
-// --- DELETE STAFF ---
+// ─── DELETE STAFF ──────────────────────────────────────────────────────────────
+
 const deleteStaff = async (req, res) => {
-  if (!canManageStaff(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+  if (denyIfNotAuthorized(req, res)) return;
+
   try {
-   if (!["admin", "owner"].includes(req.user.role))
-    return res.status(403).json({ message: "Only admin or owner can perform this action" });
-
-
     const staff = await User.findOneAndDelete({
       _id: req.params.id,
       role: "staff",
@@ -265,10 +284,9 @@ const deleteStaff = async (req, res) => {
 
     if (!staff) return res.status(404).json({ message: "Staff not found" });
 
-    res.status(200).json({ message: "Staff deleted successfully" });
+    return res.status(200).json({ message: "Staff deleted successfully" });
   } catch (err) {
-    console.error("Delete Staff Error:", err);
-    res.status(500).json({ message: "Failed to delete staff" });
+    return sendError(res, 500, "Failed to delete staff", err);
   }
 };
 

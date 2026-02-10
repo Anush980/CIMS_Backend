@@ -62,7 +62,7 @@ const getItems = async (req, res) => {
 
     let itemsQuery = Item.find(query);
 
-    if (!sort || sort === "latest") itemsQuery = itemsQuery.sort({ _id: -1 });
+    if (!sort || sort === "recent") itemsQuery = itemsQuery.sort({ _id: -1 });
     else if (sort === "oldest") itemsQuery = itemsQuery.sort({ _id: 1 });
 
     const items = await itemsQuery.exec();

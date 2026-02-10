@@ -15,7 +15,7 @@ const getProfile = async (req, res) => {
     res.status(200).json(user);
   } catch (err) {
     console.error("Get Profile Error:", err);
-    res.status(500).json({ message: "Failed to fetch profile" });
+    res.status(500).json({ message: "Failed to fetch profile", error: err.message });
   }
 };
 
@@ -23,42 +23,28 @@ const getProfile = async (req, res) => {
 // --- UPDATE PROFILE INFO ---
 const updateProfile = async (req, res) => {
   try {
-    const { name, jobTitle, shopName } = req.body;
+    const { name, phone } = req.body;
 
-    // name & jobTitle are allowed for everyone
-    if (!name || !jobTitle) {
-      return res.status(400).json({
-        message: "Name and Job Title are required",
-      });
-    }
+    let updateData = {};
 
-    let updateData = {
-      name,
-      jobTitle,
-    };
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
 
-    // 🔒 Only admin or owner can change shopName
-    if (["admin", "owner"].includes(req.user.role)) {
-      if (!shopName) {
-        return res.status(400).json({
-          message: "Shop name is required for admin/owner",
-        });
-      }
-      updateData.shopName = shopName;
-    }
-
-    // Handle profile image upload
+    // Profile image
     if (req.file) {
       const imageUrl = await new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "profile" },
-          (error, result) =>
-            error ? reject(error) : resolve(result.secure_url)
+          (error, result) => (error ? reject(error) : resolve(result.secure_url))
         );
         streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
 
       updateData.image = imageUrl;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ message: "Nothing to update" });
     }
 
     const updatedUser = await User.findByIdAndUpdate(
@@ -70,9 +56,11 @@ const updateProfile = async (req, res) => {
     res.status(200).json(updatedUser);
   } catch (err) {
     console.error("Update Profile Error:", err);
-    res.status(500).json({ message: "Failed to update profile" });
+    res.status(500).json({ message: "Failed to update profile", error: err.message });
   }
 };
+
+
 
 
 // --- UPDATE PASSWORD ---
@@ -88,7 +76,7 @@ const updatePassword = async (req, res) => {
     res.status(200).json({ message: "Password updated successfully" });
   } catch (err) {
     console.error("Update Password Error:", err);
-    res.status(500).json({ message: "Failed to update password" });
+    res.status(500).json({ message: "Failed to update password", error: err.message });
   }
 };
 
