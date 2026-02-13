@@ -1,20 +1,20 @@
-#offical node js image
-FROM node:20
+# Use official Node image
+FROM node:18
 
-#working directory
+# Create app directory inside container
 WORKDIR /app
 
-#copy package.json
+# Copy package files first
 COPY package*.json ./
 
-#install dependencies
+# Install dependencies
 RUN npm install
 
-#copy other code...
+# Copy remaining project files
 COPY . .
 
-#expose the port app uses
+# Expose port
 EXPOSE 5000
 
-#start the app 
-CMD ["node","server.js"]
+# Start the app
+CMD ["npm", "start"]

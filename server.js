@@ -22,8 +22,10 @@ const salesRoutes = require("./routes/salesRoutes");
 const staffRoutes = require("./routes/staffRoutes"); 
 const profileRoutes = require("./routes/profileRoutes");
 const adminRoutes = require("./routes/adminRoutes")
+const otpResetRoutes=require("./routes/otpResetRoutes");
 // Mount routes
 app.use("/api/auth", authRoutes);
+app.use("/api/reset", otpResetRoutes);
 app.use("/api", inventoryRoutes);
 app.use("/api", customerRoutes);
 app.use("/api", salesRoutes);
@@ -39,12 +41,13 @@ app.get("/health", (req, res) => {
 
 // --- DATABASE CONNECTION ---
 mongoose
-  .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  // .connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.MONGODB_URI)
   .then(() => console.log(" Connected to the database"))
   .catch((err) => console.error(" Database connection error:", err));
 
 // --- ERROR HANDLING (Fallback) ---
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   console.error("Server Error:", err);
   res.status(500).json({ message: "Internal Server Error" });
 });
