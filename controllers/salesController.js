@@ -3,22 +3,21 @@ const Item = require('../models/Item');
 const Customer = require('../models/Customer');
 const { canAdd, canEdit, canDelete } = require("../utils/permissions");
 
-
 // --- ADD NEW SALE ---
 const addSales = async (req, res) => {
-if (!canAdd(req.user.role)) {
-  return res.status(403).json({ message: "Access denied" });
-}
+  if (!canAdd(req.user.role)) {
+    return res.status(403).json({ message: "Access denied" , type:"error"});
+  }
   try {
     const { customerId, walkInCustomer, items, discount = 0, paymentType = 'cash' } = req.body;
 
-    if (!items || !items.length) return res.status(400).json({ error: "Items are required for a sale" });
+    if (!items || !items.length) return res.status(400).json({ message: "Items are required for a sale",type:"info" });
 
     // Validate customer if provided
     let customer = null;
     if (customerId) {
       customer = await Customer.findOne({ _id: customerId, shopName: req.user.shopName });
-      if (!customer) return res.status(400).json({ error: "Customer not found" });
+      if (!customer) return res.status(400).json({ message: "Customer not found" , type:"error"});
     }
 
     // Calculate total & validate stock
@@ -26,9 +25,8 @@ if (!canAdd(req.user.role)) {
     for (let i = 0; i < items.length; i++) {
       const { product: itemId, quantity } = items[i];
       const item = await Item.findOne({ _id: itemId, shopName: req.user.shopName });
-      if (!item) return res.status(400).json({ error: `Item not found: ${itemId}` });
-      if (item.stock < quantity) return res.status(400).json({ error: `Not enough stock for ${item.itemName}` });
-
+      if (!item) return res.status(400).json({ message: `Item not found: ${itemId}` , type:"error" });
+      if (item.stock < quantity) return res.status(400).json({ message: `Not enough stock for ${item.itemName}`,type:"error" });
       items[i].price = item.price; // attach price at time of sale
       total += item.price * quantity;
     }
@@ -61,82 +59,117 @@ if (!canAdd(req.user.role)) {
     res.status(201).json(sale);
   } catch (err) {
     console.error("Add Sales Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message , type:"error"});
   }
 };
 
 // --- GET ALL SALES ---
+
 const getSales = async (req, res) => {
-  
   try {
-    const sales = await Sales.find({shopName: req.user.shopName }).populate("items.product", "itemName sku image");
+    const sales = await Sales.find({ shopName: req.user.shopName })
+      .populate("items.product", "itemName sku image")
+      .sort({ createdAt: -1 }); // newest first
+
     res.status(200).json(sales);
   } catch (err) {
     console.error("Get Sales Error:", err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message, type: "error" });
   }
 };
+
 
 // --- GET SALE BY ID ---
 const getSalesbyID = async (req, res) => {
   try {
     const sale = await Sales.findOne({ _id: req.params.id, shopName: req.user.shopName }).populate("items.product", "itemName sku");
-    if (!sale) return res.status(404).json({ error: "Sale not found" });
+    if (!sale) return res.status(404).json({ message: "Sale not found" , type:"error"});
     res.status(200).json(sale);
   } catch (err) {
     console.error("Get Sale By ID Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
 // --- UPDATE SALE ---
 const updateSales = async (req, res) => {
-
- if (!canEdit(req.user.role)) {
-  return res.status(403).json({ message: "Only admin or owner can update items" });
-}
-
   try {
-    const sale = await Sales.findOneAndUpdate({ _id: req.params.id, shopName: req.user.shopName }, req.body, { new: true });
-    if (!sale) return res.status(404).json({ error: "Sale not found" });
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canEdit permission
+      if (!req.user.permissions?.canEdit) {
+        return res.status(403).json({ 
+          message: "You don't have permission to edit sales. Contact shop owner." , type:"error"
+        });
+      }
+    } else if (!canEdit(req.user.role)) {
+      // For non-staff roles, use the canEdit function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
+    }
+
+    const sale = await Sales.findOneAndUpdate(
+      { _id: req.params.id, shopName: req.user.shopName }, 
+      req.body, 
+      { new: true }
+    );
+
+    if (!sale) return res.status(404).json({ message: "Sale not found", type:"error" });
     res.status(200).json(sale);
   } catch (err) {
     console.error("Update Sale Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
 // --- DELETE SALE ---
-
 const deleteSales = async (req, res) => {
-  
-  if (!canDelete(req.user.role)) {
-  return res.status(403).json({ message: "Only admin or owner can delete items" });
-}
   try {
-    const sale = await Sales.findOneAndDelete({ _id: req.params.id, shopName: req.user.shopName });
-    if (!sale) return res.status(404).json({ error: "Sale not found" });
-    res.status(200).json(sale);
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canDelete permission
+      if (!req.user.permissions?.canDelete) {
+        return res.status(403).json({ 
+          message: "You don't have permission to delete sales. Contact shop owner." , type:"error"
+        });
+      }
+    } else if (!canDelete(req.user.role)) {
+      // For non-staff roles, use the canDelete function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
+    }
+
+    const sale = await Sales.findOneAndDelete({ 
+      _id: req.params.id, 
+      shopName: req.user.shopName 
+    });
+
+    if (!sale) return res.status(404).json({ message: "Sale not found" , type:"error"});
+    
+    res.status(200).json({ message: "Sale deleted successfully" , type:"success"});
   } catch (err) {
     console.error("Delete Sale Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message , type:"error"});
   }
 };
 
 // --- SEARCH SALES ---
-// Staff + admin
 const searchSales = async (req, res) => {
   try {
     const { q } = req.query;
     if (!q) return res.json([]);
+    
     const results = await Sales.find({
-     shopName: req.user.shopName,
+      shopName: req.user.shopName,
       $or: [{ walkInCustomer: { $regex: q, $options: "i" } }],
     });
+    
     res.status(200).json(results);
   } catch (err) {
     console.error("Search Sales Error:", err);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ message: "Server Error", type:"error" });
   }
 };
 

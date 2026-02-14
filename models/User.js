@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: true,
-      unique: true, // ensures uniqueness at DB level
+      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -76,6 +76,12 @@ const userSchema = new mongoose.Schema(
       ],
     },
     staffAddress: {
+      required: [
+        function () {
+          return this.role === "staff";
+        },
+        "staffAddress is required for staff users",
+      ],
       type: String,
     },
     salary: {
@@ -85,7 +91,7 @@ const userSchema = new mongoose.Schema(
 
     // Permissions controlled by owner (for staff)
     permissions: {
-      canEdit: { type: Boolean, default: false },
+      canEdit: { type: Boolean, default: true },
       canDelete: { type: Boolean, default: false },
     },
 

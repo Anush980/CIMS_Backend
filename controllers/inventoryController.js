@@ -1,4 +1,4 @@
-// src/controllers/itemController.js
+// src/controllers/inventoryController.js
 const Item = require("../models/Item");
 const cloudinary = require("../config/cloudinary");
 const streamifier = require("streamifier");
@@ -7,10 +7,9 @@ const { canAdd, canEdit, canDelete } = require("../utils/permissions");
 const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/v1758189840/inventory/rgwniiqhjknsuuapvjpx.jpg`;
 
 // --- Add Item ---
-// Accessible by staff + admin (future: owner too if needed)
 const addItem = async (req, res) => {
   if (!canAdd(req.user.role)) {
-    return res.status(403).json({ message: "Access denied" });
+    return res.status(403).json({ message: "Access denied", type:"error" });
   }
   try {
     let imageUrl = DEFAULT_IMAGE_URL;
@@ -39,7 +38,7 @@ const addItem = async (req, res) => {
     res.status(201).json(item);
   } catch (err) {
     console.error("Add Item Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message , type:"error"});
   }
 };
 
@@ -80,23 +79,32 @@ const getItemByID = async (req, res) => {
       _id: req.params.id,
       shopName: req.user.shopName,
     });
-    if (!item) return res.status(404).json({ error: "Item not found" });
+    if (!item) return res.status(404).json({ message: "Item not found", type:"error" });
     res.status(200).json(item);
   } catch (err) {
     console.error("Get Item By ID Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
 // --- Update Item ---
 const updateItem = async (req, res) => {
-  if (!canEdit(req.user.role)) {
-    return res
-      .status(403)
-      .json({ message: "Only admin or owner can update items" });
-  }
-
   try {
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canEdit permission
+      if (!req.user.permissions?.canEdit) {
+        return res.status(403).json({ 
+          message: "You don't have permission to edit inventory items. Contact admin.", type:"error" 
+        });
+      }
+    } else if (!canEdit(req.user.role)) {
+      // For non-staff roles, use the canEdit function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
+    }
+
     const id = req.params.id;
     let updateData = { ...req.body };
 
@@ -123,25 +131,36 @@ const updateItem = async (req, res) => {
     res.status(200).json(item);
   } catch (err) {
     console.error("Update Item Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message , type:"error"});
   }
 };
 
 // --- Delete Item ---
 const deleteItem = async (req, res) => {
-  if (!canDelete(req.user.role)) {
-    return res
-      .status(403)
-      .json({ message: "Only admin or owner can delete items" });
-  }
-
   try {
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canDelete permission
+      if (!req.user.permissions?.canDelete) {
+        return res.status(403).json({ 
+          message: "You don't have permission to delete inventory items. Contact shop owner." , type:"error"
+        });
+      }
+    } else if (!canDelete(req.user.role)) {
+      // For non-staff roles, use the canDelete function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
+    }
+
     const item = await Item.findOneAndDelete({
       _id: req.params.id,
       shopName: req.user.shopName,
     });
+
     if (!item) return res.status(404).json({ error: "Item not found" });
-    res.status(200).json({ message: "Item deleted successfully" });
+    
+    res.status(200).json({ message: "Item deleted successfully", type:"success" });
   } catch (err) {
     console.error("Delete Item Error:", err);
     res.status(400).json({ error: err.message });

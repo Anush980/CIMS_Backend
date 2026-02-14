@@ -10,7 +10,7 @@ const DEFAULT_IMAGE_URL = `https://res.cloudinary.com/${process.env.CLOUDINARY_C
 // Accessible by admin and staff (or owner if needed)
 const addCustomer = async (req, res) => {
   if (!canAdd(req.user.role)) {
-    return res.status(403).json({ message: "Access denied" });
+    return res.status(403).json({ message: "Access denied", type:"error" });
   }
   try {
     let imageUrl = DEFAULT_IMAGE_URL;
@@ -38,7 +38,7 @@ const addCustomer = async (req, res) => {
     res.status(201).json(customer);
   } catch (err) {
     console.error("Add Customer Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
@@ -71,7 +71,7 @@ const getCustomers = async (req, res) => {
     res.status(200).json(customers);
   } catch (err) {
     console.error("Get Customers Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
@@ -82,26 +82,30 @@ const getCustomerById = async (req, res) => {
       _id: req.params.id,
       shopName: req.user.shopName,
     });
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    if (!customer) return res.status(404).json({ message: "Customer not found", type:"error" });
     res.status(200).json(customer);
   } catch (err) {
     console.error("Get Customer By ID Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
 // --- Update Customer ---
 const updateCustomer = async (req, res) => {
-  if (!canEdit(req.user.role)) {
-    return res
-      .status(403)
-      .json({ message: "Only admin or owner can update items" });
-  }
   try {
-    if (req.user.role === "staff" && !req.user.permissions.canEdit) {
-      return res
-        .status(403)
-        .json({ error: "Contact shop owner to update customer" });
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canEdit permission
+      if (!req.user.permissions?.canEdit) {
+        return res.status(403).json({ 
+          message: "You don't have permission to edit customers. Contact admin." , type:"error"
+        });
+      }
+    } else if (!canEdit(req.user.role)) {
+      // For non-staff roles, use the canEdit function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
     }
 
     let updateData = { ...req.body };
@@ -124,26 +128,30 @@ const updateCustomer = async (req, res) => {
       { new: true }
     );
 
-    if (!customer) return res.status(404).json({ error: "Customer not found" });
+    if (!customer) return res.status(404).json({ message: "Customer not found", type:"error" });
     res.status(200).json(customer);
   } catch (err) {
     console.error("Update Customer Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ message: err.message, type:"error" });
   }
 };
 
 // --- Delete Customer ---
 const deleteCustomer = async (req, res) => {
-  if (!canDelete(req.user.role)) {
-    return res
-      .status(403)
-      .json({ message: "Only admin or owner can delete items" });
-  }
   try {
-    if (req.user.role === "staff" && !req.user.permissions.canDelete) {
-      return res
-        .status(403)
-        .json({ error: "Contact shop owner to delete customer" });
+    // FIXED: Check permissions properly for staff
+    if (req.user.role === "staff") {
+      // Staff needs canDelete permission
+      if (!req.user.permissions?.canDelete) {
+        return res.status(403).json({ 
+          message: "You don't have permission to delete customers. Contact admin." , type:"error"
+        });
+      }
+    } else if (!canDelete(req.user.role)) {
+      // For non-staff roles, use the canDelete function
+      return res.status(403).json({ 
+        message: "Access denied" , type:"error"
+      });
     }
 
     const customer = await Customer.findOneAndDelete({
@@ -152,10 +160,10 @@ const deleteCustomer = async (req, res) => {
     });
 
     if (!customer) return res.status(404).json({ error: "Customer not found" });
-    res.status(200).json({ message: "Customer deleted successfully" });
+    res.status(200).json({ message: "Customer deleted successfully" , type:"success"});
   } catch (err) {
     console.error("Delete Customer Error:", err);
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: err.message, type:"error" });
   }
 };
 

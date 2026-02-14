@@ -10,7 +10,7 @@ const registerUser = async (req, res) => {
     // Check if the email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "User already exists" , type:"info"});
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -39,7 +39,7 @@ const registerUser = async (req, res) => {
     await newUser.save();
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "User registered successfully", type:"success",
       user: {
         id: newUser._id,
         shopName: newUser.shopName,
@@ -49,7 +49,7 @@ const registerUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error", type:"error" });
   }
 };
 
@@ -57,18 +57,24 @@ const registerUser = async (req, res) => {
 
 
 const loginUser = async (req, res) => {
-  const { shopName,email, password,  } = req.body;
+  const {email, password,  } = req.body;
 
   try {
    
     const user = await User.findOne({ email});
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid email or password", type:"error" });
+    }
+
+    if (user.isBlocked) {
+      return res
+        .status(403)
+        .json({ message: "Your account is blocked. Contact admin.", type:"error" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid email or password",type:"error" });
     }
 
     // Sign JWT with shop info
@@ -84,7 +90,7 @@ const loginUser = async (req, res) => {
     );
 
     res.status(200).json({
-      message: "Login Successful",
+      message: "Login Successful", type:"success",
       user: {
         id: user._id,
         shopName: user.shopName,
@@ -96,7 +102,7 @@ const loginUser = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error",type:"error" });
   }
 };
 
