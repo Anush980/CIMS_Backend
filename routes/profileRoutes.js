@@ -11,6 +11,6 @@ const authMiddleware = require("../middleware/authMiddleware");
 router.get("/profile", authMiddleware, getProfile);
 router.put("/profile", authMiddleware,upload.single("image"), updateProfile);
 // Update current logged-in user's password
-router.put("/password", authMiddleware, updatePassword);
+router.put("/profile/password", authMiddleware, updatePassword);
 
 module.exports = router;

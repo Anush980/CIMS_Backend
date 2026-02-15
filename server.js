@@ -47,7 +47,7 @@ mongoose
   .catch((err) => console.error(" Database connection error:", err));
 
 // --- ERROR HANDLING (Fallback) ---
-app.use((err, req, res) => {
+app.use((err, req, res,next) => {
   console.error("Server Error:", err);
   res.status(500).json({ message: "Internal Server Error" });
 });

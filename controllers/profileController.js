@@ -66,18 +66,42 @@ const updateProfile = async (req, res) => {
 // --- UPDATE PASSWORD ---
 const updatePassword = async (req, res) => {
   try {
-    const { newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
-    if (!newPassword) return res.status(400).json({ message: "New password is required" });
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const user = await User.findById(req.user._id);
+
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Strong password validation
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message:
+          "Password must be 8+ characters, include uppercase, lowercase, number and special character",
+      });
+    }
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    await User.findByIdAndUpdate(req.user._id, { password: hashed });
+
+    user.password = hashed;
+    await user.save();
 
     res.status(200).json({ message: "Password updated successfully" });
   } catch (err) {
     console.error("Update Password Error:", err);
-    res.status(500).json({ message: "Failed to update password", error: err.message });
+    res.status(500).json({ message: "Failed to update password" });
   }
 };
+
 
 module.exports = { getProfile, updateProfile, updatePassword };
