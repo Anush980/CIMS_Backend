@@ -86,7 +86,7 @@ const addStaff = async (req, res) => {
     // Generate login email
     const email = await generateStaffEmail(name, req.user.shopName);
 
-    // IMPROVEMENT 2: Check if generated email already exists (rare but possible)
+    //Check if generated email already exists
     const existingLoginEmail = await User.findOne({ 
       email: email.toLowerCase() 
     });
@@ -96,7 +96,7 @@ const addStaff = async (req, res) => {
       });
     }
 
-    // Use provided password or fall back to the super/default password
+    
     const rawPassword = req.body.password?.trim() || SUPER_PASSWORD;
 
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
@@ -240,7 +240,7 @@ const updateStaff = async (req, res) => {
     if (staffAddress) updateData.staffAddress = staffAddress;
     if (salary !== undefined) updateData.salary = salary;
 
-    // IMPROVEMENT 4: Check if new staffEmail is already taken
+    // Check if new staffEmail is already taken
     if (staffEmail) {
       const existingStaff = await User.findOne({ 
         staffEmail: staffEmail.toLowerCase().trim(),

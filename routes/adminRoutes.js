@@ -10,8 +10,8 @@ const upload = multer({ storage });
 const {
   getAllUsers,
   getUserDetails,
-  createUser,      // for POST
-  updateUser,      // for PUT
+  createUser,      
+  updateUser,      
   deleteUser,
   updateStaffPermissions,
   toggleBlockUser,

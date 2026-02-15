@@ -19,14 +19,14 @@ const transporter = nodemailer.createTransport({
 // Verify connection
 transporter.verify(function (error, success) {
   if (error) {
-    console.error('❌ Email configuration error:', error.message);
+    console.error('Email configuration error:', error.message);
     console.error('Check your .env file:');
     console.error('  SMTP_HOST:', process.env.SMTP_HOST ? '✓' : '✗ MISSING');
     console.error('  SMTP_PORT:', process.env.SMTP_PORT ? '✓' : '✗ MISSING');
     console.error('  SMTP_USER:', process.env.SMTP_USER ? '✓' : '✗ MISSING');
     console.error('  SMTP_PASS:', process.env.SMTP_PASS ? '✓' : '✗ MISSING');
   } else {
-    console.log('✓ Email server is ready to send OTP');
+    console.log(' Email server is ready to send OTP');
   }
 });
 

@@ -31,7 +31,7 @@ const addCustomer = async (req, res) => {
     const customer = await Customer.create({
       shopName: req.user.shopName,
       createdBy: req.user._id,
-      ...req.body, // expects customerName, customerPhone, etc.
+      ...req.body,
       image: imageUrl,
     });
 

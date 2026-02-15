@@ -177,7 +177,7 @@ exports.verifyOTP = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'OTP verified successfully',
-      resetToken: resetToken, // Send this to frontend to use in password reset
+      resetToken: resetToken,
     });
   } catch (error) {
     console.error('Verify OTP error:', error);
