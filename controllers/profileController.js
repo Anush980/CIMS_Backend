@@ -64,6 +64,7 @@ const updateProfile = async (req, res) => {
 
 
 // --- UPDATE PASSWORD ---
+// --- UPDATE PASSWORD ---
 const updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -78,6 +79,12 @@ const updatePassword = async (req, res) => {
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Check if new password is same as old password
+    const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsOld) {
+      return res.status(400).json({ message: "New password cannot be the same as your current password" });
     }
 
     // Strong password validation

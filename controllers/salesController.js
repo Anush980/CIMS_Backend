@@ -69,6 +69,7 @@ const getSales = async (req, res) => {
   try {
     const sales = await Sales.find({ shopName: req.user.shopName })
       .populate("items.product", "itemName sku image")
+      .populate("createdBy", "name role jobTitle")
       .sort({ createdAt: -1 }); // newest first
 
     res.status(200).json(sales);
@@ -82,7 +83,8 @@ const getSales = async (req, res) => {
 // --- GET SALE BY ID ---
 const getSalesbyID = async (req, res) => {
   try {
-    const sale = await Sales.findOne({ _id: req.params.id, shopName: req.user.shopName }).populate("items.product", "itemName sku");
+    const sale = await Sales.findOne({ _id: req.params.id, shopName: req.user.shopName }).populate("items.product", "itemName sku")
+      .populate("createdBy", "name role jobTitle");
     if (!sale) return res.status(404).json({ message: "Sale not found" , type:"error"});
     res.status(200).json(sale);
   } catch (err) {

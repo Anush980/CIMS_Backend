@@ -192,11 +192,11 @@ exports.verifyOTP = async (req, res) => {
  * Step 3: Reset password with verified token
  * POST /api/reset/change-password
  */
+// Step 3: Reset password with verified token
 exports.changePassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body;
 
-    // Validate inputs
     if (!resetToken || !newPassword) {
       return res.status(400).json({
         success: false,
@@ -204,7 +204,6 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // Validate password strength
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -212,10 +211,8 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // Hash the token
+    // Hash the token and find user
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-
-    // Find user with valid token
     const user = await User.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordTokenExpire: { $gt: Date.now() },
@@ -228,11 +225,20 @@ exports.changePassword = async (req, res) => {
       });
     }
 
-    // Hash new password
+    // ✅ Check if new password is same as old password
+    const isSameAsOld = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsOld) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password cannot be the same as your current password',
+      });
+    }
+
+    // Hash and save new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
 
-    // Clear all reset fields
+    // Clear reset fields
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpire = undefined;
     user.resetPasswordOTP = undefined;
@@ -243,16 +249,10 @@ exports.changePassword = async (req, res) => {
 
     // Send confirmation email
     try {
-      await sendPasswordChangeConfirmation(
-        user.email,
-        user.name || user.username
-      );
+      await sendPasswordChangeConfirmation(user.email, user.name || user.username);
     } catch (emailError) {
       console.error('Confirmation email failed:', emailError);
-      // Don't fail the request
     }
-
-    console.log(`Password changed successfully for ${user.email}`);
 
     res.status(200).json({
       success: true,
